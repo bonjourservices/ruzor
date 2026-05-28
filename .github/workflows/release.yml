@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-24.04
+          - os: ubuntu-22.04
             artifact: ruzor-linux-x86_64
             deps: sudo apt-get update && sudo apt-get install -y libgdbm-dev pkg-config
           - os: macos-15
