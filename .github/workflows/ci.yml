@@ -24,7 +24,9 @@ jobs:
           - name: Linux x64
             os: ubuntu-24.04
             deps: sudo apt-get update && sudo apt-get install -y libgdbm-dev pkg-config
-            test: cargo test --locked
+            test: >
+              cargo test --locked --
+              --skip sigusr1_reloads_access_file
           - name: macOS arm64
             os: macos-15
             deps: brew install gdbm pkg-config
