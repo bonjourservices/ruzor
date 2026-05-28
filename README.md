@@ -7,7 +7,7 @@
 
 Ruzor is the Rust port of the Pyzor 1.1.2 UDP client and server.
 
-Full static documentation is available at <http://docs.ruzor.org> and in [documentation/index.html](documentation/index.html).
+Full static documentation is available at <https://docs.ruzor.org> and in [documentation/index.html](documentation/index.html).
 
 Pyzor is a collaborative, networked spam detection system that identifies messages by digest and lets clients check, report, or whitelist those digests against a Pyzor server. This crate provides the `ruzor` client and `ruzord` daemon as a Rust package with command-line behavior and storage formats compatible with the upstream Pyzor 1.1 documentation.
 
@@ -176,7 +176,7 @@ ruzord -e mysql --dsn 127.0.0.1,ruzor,secret,ruzord,digests -a 127.0.0.1 -p 2444
 
 Redis DSNs also accept an optional fifth username field (`host,port,password,db,username`) for managed Redis ACL users.
 
-`--proxy-source` accepts a comma-separated list of `host[:port]` Pyzor-compatible servers. On a local `check` miss, `ruzord` checks those sources in order and stores positive upstream `Count` or `WL-Count` responses in the configured backend before replying.
+`--proxy-source` accepts a comma-separated list of `host[:port]` Pyzor-compatible servers. On a local `check` miss, `ruzord` checks those sources in order, returns the first positive upstream `Count` or `WL-Count`, and stores that positive response in the configured backend before replying. Empty upstream matches and upstream errors are not cached.
 
 The MySQL table must use the upstream Pyzor schema:
 

@@ -7,7 +7,7 @@ rust-version = "1.95"
 description = "Ruzor, a 1:1-compatible Rust port of the Pyzor UDP client and server"
 readme = "README.md"
 documentation = "https://docs.rs/ruzor"
-homepage = "https://github.com/bonjourservices/ruzor"
+homepage = "https://ruzor.org"
 repository = "https://github.com/bonjourservices/ruzor"
 
 license = "GPL-3.0-only"
@@ -20,6 +20,7 @@ include = [
     "README.md",
     "benchmarks/**",
     "documentation/**",
+    "site/**",
     "src/**",
     "tests/**",
     "!tests/reference_parity/**",
