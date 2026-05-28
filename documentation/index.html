@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ruzor Documentation</title>
+  <meta name="description" content="Static documentation for Ruzor, the Rust-native Pyzor-compatible UDP spam detection client and server.">
+  <meta name="author" content="Bonjour Services">
+  <meta name="keywords" content="Ruzor, Pyzor, Rust, spam detection, UDP, email filtering, GPL-3.0, public.ruzor.org, public.pyzor.org">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#D4FF00">
+  <link rel="canonical" href="https://bonjourservices.github.io/ruzor/documentation/index.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Ruzor Documentation">
+  <meta property="og:title" content="Ruzor Documentation">
+  <meta property="og:description" content="Static documentation for Ruzor, the Rust-native Pyzor-compatible UDP spam detection client and server.">
+  <meta property="og:url" content="https://bonjourservices.github.io/ruzor/documentation/index.html">
+  <meta property="article:section" content="Overview">
+  <meta property="article:modified_time" content="2026-05-28T00:00:00+00:00">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Ruzor Documentation">
+  <meta name="twitter:description" content="Static documentation for Ruzor, the Rust-native Pyzor-compatible UDP spam detection client and server.">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Ruzor Documentation",
+  "description": "Static documentation for Ruzor, the Rust-native Pyzor-compatible UDP spam detection client and server.",
+  "url": "https://bonjourservices.github.io/ruzor/documentation/index.html",
+  "inLanguage": "en",
+  "dateModified": "2026-05-28",
+  "author": {
+    "@type": "Organization",
+    "name": "Bonjour Services",
+    "email": "contact@bonjour.email",
+    "url": "https://github.com/bonjourservices/ruzor"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Bonjour Services",
+    "email": "contact@bonjour.email"
+  },
+  "isPartOf": {
+    "@type": "TechArticle",
+    "name": "Ruzor Documentation",
+    "url": "https://bonjourservices.github.io/ruzor/documentation/index.html"
+  },
+  "about": [
+    "Ruzor",
+    "Pyzor-compatible spam detection",
+    "Rust command-line utilities",
+    "UDP email digest checking"
+  ],
+  "mentions": [
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "Ruzor",
+      "codeRepository": "https://github.com/bonjourservices/ruzor",
+      "programmingLanguage": "Rust"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "ruzor crate",
+      "url": "https://crates.io/crates/ruzor",
+      "applicationCategory": "DeveloperApplication"
+    },
+    {
+      "@type": "CreativeWork",
+      "name": "Upstream Pyzor documentation",
+      "url": "https://www.pyzor.org/en/latest/"
+    }
+  ],
+  "license": "https://www.gnu.org/licenses/gpl-3.0.en.html",
+  "codeRepository": "https://github.com/bonjourservices/ruzor"
+}
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Ruzor documentation home">
+      <span class="brand-mark">RZ</span>
+      <span>Ruzor Docs</span>
+    </a>
+    <nav class="topnav" aria-label="Primary documentation navigation">
+      <a class="nav-link is-active" href="index.html">Overview</a>
+<a class="nav-link " href="getting-started.html">Install</a>
+<a class="nav-link " href="client.html">Client</a>
+<a class="nav-link " href="server.html">Server</a>
+<a class="nav-link " href="configuration.html">Configuration</a>
+<a class="nav-link " href="protocol.html">Protocol</a>
+<a class="nav-link " href="integrations.html">Integrations</a>
+<a class="nav-link " href="license.html">License</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero-band">
+      <div class="hero-grid">
+        <p class="eyebrow">Static docs for the Rust Pyzor port</p>
+        <h1>Ruzor Documentation</h1>
+        <p class="hero-copy">Rust-native Pyzor-compatible client and server documentation, built as static HTML and CSS for readable offline and hosted docs.</p>
+      </div>
+    </section>
+
+    <div class="doc-layout">
+      <aside class="side-rail" aria-label="Documentation links">
+        <span class="side-title">Documentation</span>
+        <a class="nav-link is-active" href="index.html">Overview</a>
+<a class="nav-link " href="getting-started.html">Install</a>
+<a class="nav-link " href="client.html">Client</a>
+<a class="nav-link " href="server.html">Server</a>
+<a class="nav-link " href="configuration.html">Configuration</a>
+<a class="nav-link " href="protocol.html">Protocol</a>
+<a class="nav-link " href="integrations.html">Integrations</a>
+<a class="nav-link " href="license.html">License</a>
+      </aside>
+      <article class="doc-content">
+        
+<section class="section">
+  <h2>What Ruzor Is</h2>
+  <p>Ruzor is a Rust implementation of the Pyzor 1.1 client and server surface. It keeps the Pyzor digest, UDP protocol, command names, input styles, and storage formats compatible while packaging the tools as native Rust binaries.</p>
+  <div class="stat-grid">
+    <div class="tile"><strong>1:1 compatibility target</strong><span>Client and daemon behavior follows the Pyzor 1.1 command-line and protocol contract.</span></div>
+    <div class="tile"><strong>Native binaries</strong><span><code>ruzor</code> and <code>ruzord</code> ship without requiring a Python runtime.</span></div>
+    <div class="tile"><strong>Static docs</strong><span>This folder is plain HTML and CSS, suitable for file browsing or static hosting.</span></div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Public Service</h2>
+  <div class="callout dark">
+    <p>Configure the public Ruzor endpoint as <code>public.ruzor.org:24441</code>. For destructive operations such as <code>report</code> and <code>whitelist</code>, use a private test server unless you intend to update the public corpus.</p>
+  </div>
+  <pre><code>mkdir -p ~/.ruzor
+printf '%s\n' public.ruzor.org:24441 &gt; ~/.ruzor/servers
+ruzor ping</code></pre>
+</section>
+
+<section class="section">
+  <h2>Documentation Map</h2>
+  <div class="link-grid">
+    <a class="tile" href="getting-started.html"><strong>Install</strong><span>Release binaries, Cargo install, source builds, feature flags.</span></a>
+    <a class="tile" href="client.html"><strong>Client</strong><span>Commands, input styles, public server file, local whitelist.</span></a>
+    <a class="tile" href="server.html"><strong>Server</strong><span>Daemon modes, backends, access files, signal handling.</span></a>
+    <a class="tile" href="configuration.html"><strong>Configuration</strong><span>Homedir rules, config names, accounts, ACL records.</span></a>
+    <a class="tile" href="protocol.html"><strong>Protocol</strong><span>Digest behavior, UDP message shape, response fields.</span></a>
+    <a class="tile" href="license.html"><strong>License</strong><span>GPL-3.0-only, upstream credits, contact.</span></a>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Project Links</h2>
+  <div class="button-row">
+    <a class="button" href="https://github.com/bonjourservices/ruzor">GitHub</a>
+    <a class="button secondary" href="https://crates.io/crates/ruzor">crates.io</a>
+    <a class="button secondary" href="mailto:contact@bonjour.email">Contact</a>
+  </div>
+</section>
+
+      </article>
+    </div>
+  </main>
+
+  
+<footer class="site-footer">
+  <div>
+    <strong>Ruzor documentation</strong>
+    <span>GPL-3.0-only. Maintained by Bonjour Services.</span>
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/bonjourservices/ruzor">GitHub</a>
+    <a href="https://crates.io/crates/ruzor">crates.io</a>
+    <a href="https://www.pyzor.org/en/latest/">Pyzor docs</a>
+    <a href="mailto:contact@bonjour.email">contact@bonjour.email</a>
+  </div>
+</footer>
+
+</body>
+</html>

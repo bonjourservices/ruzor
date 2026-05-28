@@ -7,6 +7,8 @@
 
 Ruzor is the Rust port of the Pyzor 1.1.2 UDP client and server.
 
+Full static documentation is available in [documentation/index.html](documentation/index.html).
+
 Pyzor is a collaborative, networked spam detection system that identifies messages by digest and lets clients check, report, or whitelist those digests against a Pyzor server. This crate provides the `ruzor` client and `ruzord` daemon as a Rust package with command-line behavior and storage formats compatible with the upstream Pyzor 1.1 documentation.
 
 ## Compatibility

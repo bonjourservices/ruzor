@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Client Usage - Ruzor Documentation</title>
+  <meta name="description" content="Ruzor client command reference covering check, report, whitelist, ping, digest, predigest, input styles, and public.ruzor.org.">
+  <meta name="author" content="Bonjour Services">
+  <meta name="keywords" content="Ruzor, Pyzor, Rust, spam detection, UDP, email filtering, GPL-3.0, public.ruzor.org, public.pyzor.org">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#D4FF00">
+  <link rel="canonical" href="https://bonjourservices.github.io/ruzor/documentation/client.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Ruzor Documentation">
+  <meta property="og:title" content="Client Usage - Ruzor Documentation">
+  <meta property="og:description" content="Ruzor client command reference covering check, report, whitelist, ping, digest, predigest, input styles, and public.ruzor.org.">
+  <meta property="og:url" content="https://bonjourservices.github.io/ruzor/documentation/client.html">
+  <meta property="article:section" content="Client">
+  <meta property="article:modified_time" content="2026-05-28T00:00:00+00:00">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Client Usage - Ruzor Documentation">
+  <meta name="twitter:description" content="Ruzor client command reference covering check, report, whitelist, ping, digest, predigest, input styles, and public.ruzor.org.">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Client Usage - Ruzor Documentation",
+  "description": "Ruzor client command reference covering check, report, whitelist, ping, digest, predigest, input styles, and public.ruzor.org.",
+  "url": "https://bonjourservices.github.io/ruzor/documentation/client.html",
+  "inLanguage": "en",
+  "dateModified": "2026-05-28",
+  "author": {
+    "@type": "Organization",
+    "name": "Bonjour Services",
+    "email": "contact@bonjour.email",
+    "url": "https://github.com/bonjourservices/ruzor"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Bonjour Services",
+    "email": "contact@bonjour.email"
+  },
+  "isPartOf": {
+    "@type": "TechArticle",
+    "name": "Ruzor Documentation",
+    "url": "https://bonjourservices.github.io/ruzor/documentation/index.html"
+  },
+  "about": [
+    "Ruzor",
+    "Pyzor-compatible spam detection",
+    "Rust command-line utilities",
+    "UDP email digest checking"
+  ],
+  "mentions": [
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "Ruzor",
+      "codeRepository": "https://github.com/bonjourservices/ruzor",
+      "programmingLanguage": "Rust"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "ruzor crate",
+      "url": "https://crates.io/crates/ruzor",
+      "applicationCategory": "DeveloperApplication"
+    },
+    {
+      "@type": "CreativeWork",
+      "name": "Upstream Pyzor documentation",
+      "url": "https://www.pyzor.org/en/latest/"
+    }
+  ],
+  "license": "https://www.gnu.org/licenses/gpl-3.0.en.html",
+  "codeRepository": "https://github.com/bonjourservices/ruzor"
+}
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Ruzor documentation home">
+      <span class="brand-mark">RZ</span>
+      <span>Ruzor Docs</span>
+    </a>
+    <nav class="topnav" aria-label="Primary documentation navigation">
+      <a class="nav-link " href="index.html">Overview</a>
+<a class="nav-link " href="getting-started.html">Install</a>
+<a class="nav-link is-active" href="client.html">Client</a>
+<a class="nav-link " href="server.html">Server</a>
+<a class="nav-link " href="configuration.html">Configuration</a>
+<a class="nav-link " href="protocol.html">Protocol</a>
+<a class="nav-link " href="integrations.html">Integrations</a>
+<a class="nav-link " href="license.html">License</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero-band">
+      <div class="hero-grid">
+        <p class="eyebrow">ruzor command reference</p>
+        <h1>Client Usage</h1>
+        <p class="hero-copy">Rust-native Pyzor-compatible client and server documentation, built as static HTML and CSS for readable offline and hosted docs.</p>
+      </div>
+    </section>
+
+    <div class="doc-layout">
+      <aside class="side-rail" aria-label="Documentation links">
+        <span class="side-title">Documentation</span>
+        <a class="nav-link " href="index.html">Overview</a>
+<a class="nav-link " href="getting-started.html">Install</a>
+<a class="nav-link is-active" href="client.html">Client</a>
+<a class="nav-link " href="server.html">Server</a>
+<a class="nav-link " href="configuration.html">Configuration</a>
+<a class="nav-link " href="protocol.html">Protocol</a>
+<a class="nav-link " href="integrations.html">Integrations</a>
+<a class="nav-link " href="license.html">License</a>
+      </aside>
+      <article class="doc-content">
+        
+<section class="section">
+  <h2>Command Shape</h2>
+  <p>The client reads message data from standard input for message-oriented commands. Commands that only inspect configuration or connectivity, such as <code>ping</code> and <code>genkey</code>, do not require message input.</p>
+  <pre><code>ruzor [options] command</code></pre>
+</section>
+
+<section class="section">
+  <h2>Commands</h2>
+  <table>
+    <thead><tr><th>Command</th><th>Use</th><th>Reads stdin</th></tr></thead>
+    <tbody>
+      <tr><td><code>check</code></td><td>Query report and whitelist counts for each digest.</td><td>Yes</td></tr>
+      <tr><td><code>info</code></td><td>Print detailed count and timestamp data.</td><td>Yes</td></tr>
+      <tr><td><code>report</code></td><td>Report message digests as spam.</td><td>Yes</td></tr>
+      <tr><td><code>whitelist</code></td><td>Report message digests as not-spam.</td><td>Yes</td></tr>
+      <tr><td><code>ping</code></td><td>Verify server reachability.</td><td>No</td></tr>
+      <tr><td><code>pong</code></td><td>Test command that returns a fixed positive response.</td><td>Yes</td></tr>
+      <tr><td><code>digest</code></td><td>Print the Pyzor digest without contacting a server.</td><td>Yes</td></tr>
+      <tr><td><code>predigest</code></td><td>Print normalized text before hashing.</td><td>Yes</td></tr>
+      <tr><td><code>genkey</code></td><td>Generate account key material.</td><td>Interactive</td></tr>
+      <tr><td><code>local_whitelist</code></td><td>Add a digest to the local client whitelist.</td><td>Yes</td></tr>
+      <tr><td><code>local_unwhitelist</code></td><td>Remove a digest from the local whitelist.</td><td>Yes</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="section">
+  <h2>Servers File</h2>
+  <p>The client contacts every server listed in the configured <code>servers</code> file. Use <code>public.ruzor.org:24441</code> for the public Ruzor service endpoint.</p>
+  <pre><code>mkdir -p ~/.ruzor
+cat &gt; ~/.ruzor/servers &lt;&lt;'EOF'
+public.ruzor.org:24441
+127.0.0.1:24441
+EOF
+
+ruzor ping</code></pre>
+</section>
+
+<section class="section">
+  <h2>Input Styles</h2>
+  <table>
+    <thead><tr><th>Style</th><th>Meaning</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><code>msg</code></td><td>One RFC message from stdin.</td><td><code>ruzor check &lt; message.eml</code></td></tr>
+      <tr><td><code>mbox</code></td><td>An mbox file containing multiple messages.</td><td><code>ruzor -s mbox digest &lt; mail.mbox</code></td></tr>
+      <tr><td><code>digests</code></td><td>One digest per line, no message parsing.</td><td><code>ruzor -s digests check &lt; digests.txt</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="section">
+  <h2>Common Options</h2>
+  <pre><code>--homedir DIR
+--servers-file FILE
+--accounts-file FILE
+--local-whitelist FILE
+--log-file FILE
+-s, --style msg|mbox|digests
+-t, --timeout SECONDS
+-r, --report-threshold COUNT
+-w, --whitelist-threshold COUNT
+-d, --debug
+-n, --nice NICE</code></pre>
+</section>
+
+<section class="section">
+  <h2>Local Whitelist</h2>
+  <p>The local whitelist is client-side. If a digest is locally whitelisted, <code>check</code> returns the local result without depending on the remote server response.</p>
+  <pre><code>ruzor local_whitelist &lt; false-positive.eml
+ruzor check &lt; false-positive.eml
+ruzor local_unwhitelist &lt; false-positive.eml</code></pre>
+</section>
+
+      </article>
+    </div>
+  </main>
+
+  
+<footer class="site-footer">
+  <div>
+    <strong>Ruzor documentation</strong>
+    <span>GPL-3.0-only. Maintained by Bonjour Services.</span>
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/bonjourservices/ruzor">GitHub</a>
+    <a href="https://crates.io/crates/ruzor">crates.io</a>
+    <a href="https://www.pyzor.org/en/latest/">Pyzor docs</a>
+    <a href="mailto:contact@bonjour.email">contact@bonjour.email</a>
+  </div>
+</footer>
+
+</body>
+</html>

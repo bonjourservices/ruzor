@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Configuration - Ruzor Documentation</title>
+  <meta name="description" content="Ruzor configuration file reference for homedir layout, servers, accounts, local whitelist, password files, and access control rules.">
+  <meta name="author" content="Bonjour Services">
+  <meta name="keywords" content="Ruzor, Pyzor, Rust, spam detection, UDP, email filtering, GPL-3.0, public.ruzor.org, public.pyzor.org">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#D4FF00">
+  <link rel="canonical" href="https://bonjourservices.github.io/ruzor/documentation/configuration.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Ruzor Documentation">
+  <meta property="og:title" content="Configuration - Ruzor Documentation">
+  <meta property="og:description" content="Ruzor configuration file reference for homedir layout, servers, accounts, local whitelist, password files, and access control rules.">
+  <meta property="og:url" content="https://bonjourservices.github.io/ruzor/documentation/configuration.html">
+  <meta property="article:section" content="Configuration">
+  <meta property="article:modified_time" content="2026-05-28T00:00:00+00:00">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Configuration - Ruzor Documentation">
+  <meta name="twitter:description" content="Ruzor configuration file reference for homedir layout, servers, accounts, local whitelist, password files, and access control rules.">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Configuration - Ruzor Documentation",
+  "description": "Ruzor configuration file reference for homedir layout, servers, accounts, local whitelist, password files, and access control rules.",
+  "url": "https://bonjourservices.github.io/ruzor/documentation/configuration.html",
+  "inLanguage": "en",
+  "dateModified": "2026-05-28",
+  "author": {
+    "@type": "Organization",
+    "name": "Bonjour Services",
+    "email": "contact@bonjour.email",
+    "url": "https://github.com/bonjourservices/ruzor"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Bonjour Services",
+    "email": "contact@bonjour.email"
+  },
+  "isPartOf": {
+    "@type": "TechArticle",
+    "name": "Ruzor Documentation",
+    "url": "https://bonjourservices.github.io/ruzor/documentation/index.html"
+  },
+  "about": [
+    "Ruzor",
+    "Pyzor-compatible spam detection",
+    "Rust command-line utilities",
+    "UDP email digest checking"
+  ],
+  "mentions": [
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "Ruzor",
+      "codeRepository": "https://github.com/bonjourservices/ruzor",
+      "programmingLanguage": "Rust"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "ruzor crate",
+      "url": "https://crates.io/crates/ruzor",
+      "applicationCategory": "DeveloperApplication"
+    },
+    {
+      "@type": "CreativeWork",
+      "name": "Upstream Pyzor documentation",
+      "url": "https://www.pyzor.org/en/latest/"
+    }
+  ],
+  "license": "https://www.gnu.org/licenses/gpl-3.0.en.html",
+  "codeRepository": "https://github.com/bonjourservices/ruzor"
+}
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Ruzor documentation home">
+      <span class="brand-mark">RZ</span>
+      <span>Ruzor Docs</span>
+    </a>
+    <nav class="topnav" aria-label="Primary documentation navigation">
+      <a class="nav-link " href="index.html">Overview</a>
+<a class="nav-link " href="getting-started.html">Install</a>
+<a class="nav-link " href="client.html">Client</a>
+<a class="nav-link " href="server.html">Server</a>
+<a class="nav-link is-active" href="configuration.html">Configuration</a>
+<a class="nav-link " href="protocol.html">Protocol</a>
+<a class="nav-link " href="integrations.html">Integrations</a>
+<a class="nav-link " href="license.html">License</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero-band">
+      <div class="hero-grid">
+        <p class="eyebrow">Files, accounts, access</p>
+        <h1>Configuration</h1>
+        <p class="hero-copy">Rust-native Pyzor-compatible client and server documentation, built as static HTML and CSS for readable offline and hosted docs.</p>
+      </div>
+    </section>
+
+    <div class="doc-layout">
+      <aside class="side-rail" aria-label="Documentation links">
+        <span class="side-title">Documentation</span>
+        <a class="nav-link " href="index.html">Overview</a>
+<a class="nav-link " href="getting-started.html">Install</a>
+<a class="nav-link " href="client.html">Client</a>
+<a class="nav-link " href="server.html">Server</a>
+<a class="nav-link is-active" href="configuration.html">Configuration</a>
+<a class="nav-link " href="protocol.html">Protocol</a>
+<a class="nav-link " href="integrations.html">Integrations</a>
+<a class="nav-link " href="license.html">License</a>
+      </aside>
+      <article class="doc-content">
+        
+<section class="section">
+  <h2>Homedir</h2>
+  <p>Ruzor uses <code>~/.ruzor</code> when <code>HOME</code> is set, otherwise <code>/etc/ruzor</code>. Relative paths from configuration files resolve inside the homedir.</p>
+  <table>
+    <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>servers</code></td><td>Client server list, one <code>host:port</code> per line.</td></tr>
+      <tr><td><code>accounts</code></td><td>Client account credentials for authenticated servers.</td></tr>
+      <tr><td><code>whitelist</code></td><td>Client-side digest whitelist.</td></tr>
+      <tr><td><code>ruzord.passwd</code></td><td>Server account key database.</td></tr>
+      <tr><td><code>ruzord.access</code></td><td>Server ACL rules.</td></tr>
+      <tr><td><code>ruzord.db</code></td><td>Default gdbm digest database.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="section">
+  <h2>Client Configuration</h2>
+  <pre><code>[client]
+ServersFile = servers
+AccountsFile = accounts
+LogFile = client.log
+LocalWhitelist = whitelist
+Timeout = 5
+Style = msg
+ReportThreshold = 0
+WhitelistThreshold = 0</code></pre>
+</section>
+
+<section class="section">
+  <h2>Server Configuration</h2>
+  <pre><code>[server]
+Port = 24441
+ListenAddress = 0.0.0.0
+LogFile = pyzord.log
+UsageLogFile = pyzord-usage.log
+PidFile = ruzord.pid
+PasswdFile = ruzord.passwd
+AccessFile = ruzord.access
+Engine = gdbm
+DigestDB = ruzord.db
+CleanupAge = 0
+Threads = false
+Processes = false
+PreFork = 0</code></pre>
+</section>
+
+<section class="section">
+  <h2>Accounts</h2>
+  <p>Accounts let a server grant permissions beyond anonymous defaults. The user generates a salt and key, stores salt plus key in the client <code>accounts</code> file, and sends only the key material to the server operator.</p>
+  <pre><code>ruzor genkey
+
+# ~/.ruzor/accounts
+public.ruzor.org : 24441 : alice : SALT,KEY
+
+# /var/lib/ruzor/ruzord.passwd
+alice : KEY</code></pre>
+</section>
+
+<section class="section">
+  <h2>Access File</h2>
+  <p>If no access file exists, anonymous users may check, report, ping, pong, and info. Whitelisting is denied by default.</p>
+  <pre><code># Allow anonymous checks and reports.
+check report ping pong info : anonymous : allow
+
+# Allow one authenticated user to whitelist too.
+check report ping pong info whitelist : alice : allow
+
+# Deny rule example.
+whitelist : anonymous : deny</code></pre>
+</section>
+
+      </article>
+    </div>
+  </main>
+
+  
+<footer class="site-footer">
+  <div>
+    <strong>Ruzor documentation</strong>
+    <span>GPL-3.0-only. Maintained by Bonjour Services.</span>
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/bonjourservices/ruzor">GitHub</a>
+    <a href="https://crates.io/crates/ruzor">crates.io</a>
+    <a href="https://www.pyzor.org/en/latest/">Pyzor docs</a>
+    <a href="mailto:contact@bonjour.email">contact@bonjour.email</a>
+  </div>
+</footer>
+
+</body>
+</html>

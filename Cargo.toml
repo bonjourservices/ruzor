@@ -19,6 +19,7 @@ include = [
     "LICENSE",
     "README.md",
     "benchmarks/**",
+    "documentation/**",
     "src/**",
     "tests/**",
     "!tests/reference_parity/**",

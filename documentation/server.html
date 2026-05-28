@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Server Usage - Ruzor Documentation</title>
+  <meta name="description" content="Ruzord server documentation for the Pyzor-compatible UDP daemon, storage backends, concurrency modes, MySQL schema, and signals.">
+  <meta name="author" content="Bonjour Services">
+  <meta name="keywords" content="Ruzor, Pyzor, Rust, spam detection, UDP, email filtering, GPL-3.0, public.ruzor.org, public.pyzor.org">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#D4FF00">
+  <link rel="canonical" href="https://bonjourservices.github.io/ruzor/documentation/server.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Ruzor Documentation">
+  <meta property="og:title" content="Server Usage - Ruzor Documentation">
+  <meta property="og:description" content="Ruzord server documentation for the Pyzor-compatible UDP daemon, storage backends, concurrency modes, MySQL schema, and signals.">
+  <meta property="og:url" content="https://bonjourservices.github.io/ruzor/documentation/server.html">
+  <meta property="article:section" content="Server">
+  <meta property="article:modified_time" content="2026-05-28T00:00:00+00:00">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Server Usage - Ruzor Documentation">
+  <meta name="twitter:description" content="Ruzord server documentation for the Pyzor-compatible UDP daemon, storage backends, concurrency modes, MySQL schema, and signals.">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Server Usage - Ruzor Documentation",
+  "description": "Ruzord server documentation for the Pyzor-compatible UDP daemon, storage backends, concurrency modes, MySQL schema, and signals.",
+  "url": "https://bonjourservices.github.io/ruzor/documentation/server.html",
+  "inLanguage": "en",
+  "dateModified": "2026-05-28",
+  "author": {
+    "@type": "Organization",
+    "name": "Bonjour Services",
+    "email": "contact@bonjour.email",
+    "url": "https://github.com/bonjourservices/ruzor"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Bonjour Services",
+    "email": "contact@bonjour.email"
+  },
+  "isPartOf": {
+    "@type": "TechArticle",
+    "name": "Ruzor Documentation",
+    "url": "https://bonjourservices.github.io/ruzor/documentation/index.html"
+  },
+  "about": [
+    "Ruzor",
+    "Pyzor-compatible spam detection",
+    "Rust command-line utilities",
+    "UDP email digest checking"
+  ],
+  "mentions": [
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "Ruzor",
+      "codeRepository": "https://github.com/bonjourservices/ruzor",
+      "programmingLanguage": "Rust"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "ruzor crate",
+      "url": "https://crates.io/crates/ruzor",
+      "applicationCategory": "DeveloperApplication"
+    },
+    {
+      "@type": "CreativeWork",
+      "name": "Upstream Pyzor documentation",
+      "url": "https://www.pyzor.org/en/latest/"
+    }
+  ],
+  "license": "https://www.gnu.org/licenses/gpl-3.0.en.html",
+  "codeRepository": "https://github.com/bonjourservices/ruzor"
+}
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Ruzor documentation home">
+      <span class="brand-mark">RZ</span>
+      <span>Ruzor Docs</span>
+    </a>
+    <nav class="topnav" aria-label="Primary documentation navigation">
+      <a class="nav-link " href="index.html">Overview</a>
+<a class="nav-link " href="getting-started.html">Install</a>
+<a class="nav-link " href="client.html">Client</a>
+<a class="nav-link is-active" href="server.html">Server</a>
+<a class="nav-link " href="configuration.html">Configuration</a>
+<a class="nav-link " href="protocol.html">Protocol</a>
+<a class="nav-link " href="integrations.html">Integrations</a>
+<a class="nav-link " href="license.html">License</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero-band">
+      <div class="hero-grid">
+        <p class="eyebrow">ruzord daemon reference</p>
+        <h1>Server Usage</h1>
+        <p class="hero-copy">Rust-native Pyzor-compatible client and server documentation, built as static HTML and CSS for readable offline and hosted docs.</p>
+      </div>
+    </section>
+
+    <div class="doc-layout">
+      <aside class="side-rail" aria-label="Documentation links">
+        <span class="side-title">Documentation</span>
+        <a class="nav-link " href="index.html">Overview</a>
+<a class="nav-link " href="getting-started.html">Install</a>
+<a class="nav-link " href="client.html">Client</a>
+<a class="nav-link is-active" href="server.html">Server</a>
+<a class="nav-link " href="configuration.html">Configuration</a>
+<a class="nav-link " href="protocol.html">Protocol</a>
+<a class="nav-link " href="integrations.html">Integrations</a>
+<a class="nav-link " href="license.html">License</a>
+      </aside>
+      <article class="doc-content">
+        
+<section class="section">
+  <h2>Daemon</h2>
+  <p><code>ruzord</code> listens for Pyzor-compatible UDP requests and stores digest records in the selected backend.</p>
+  <pre><code>ruzord --homedir /var/lib/ruzor -a 0.0.0.0 -p 24441</code></pre>
+  <pre><code>ruzord --homedir /var/lib/ruzor   --dsn /var/lib/ruzor/ruzord.db   --password-file ruzord.passwd   --access-file ruzord.access   -a 0.0.0.0 -p 24441</code></pre>
+</section>
+
+<section class="section">
+  <h2>Backends</h2>
+  <table>
+    <thead><tr><th>Engine</th><th>DSN</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>gdbm</code></td><td>Path to database file</td><td>Default backend; compatible with Python GNU gdbm records.</td></tr>
+      <tr><td><code>redis</code></td><td><code>host,port,password,db</code></td><td>Redis v1 hash format.</td></tr>
+      <tr><td><code>redis_v0</code></td><td><code>host,port,password,db</code></td><td>Legacy Redis string format.</td></tr>
+      <tr><td><code>mysql</code></td><td><code>host,user,password,database,table</code></td><td>Uses the upstream Pyzor MySQL schema.</td></tr>
+    </tbody>
+  </table>
+  <pre><code>ruzord -e redis --dsn 127.0.0.1,6379,,0 -a 127.0.0.1 -p 24441
+ruzord -e redis_v0 --dsn 127.0.0.1,6379,,0 -a 127.0.0.1 -p 24441
+ruzord -e mysql --dsn 127.0.0.1,ruzor,secret,ruzord,digests -a 127.0.0.1 -p 24441</code></pre>
+</section>
+
+<section class="section">
+  <h2>MySQL Schema</h2>
+  <pre><code>CREATE TABLE digests (
+  digest char(40) NOT NULL,
+  r_count int(11) DEFAULT NULL,
+  wl_count int(11) DEFAULT NULL,
+  r_entered datetime DEFAULT NULL,
+  wl_entered datetime DEFAULT NULL,
+  r_updated datetime DEFAULT NULL,
+  wl_updated datetime DEFAULT NULL,
+  PRIMARY KEY (digest)
+);</code></pre>
+</section>
+
+<section class="section">
+  <h2>Concurrency And Process Modes</h2>
+  <pre><code>ruzord --threads true --max-threads 10 --db-connections 10 -a 127.0.0.1 -p 24441
+ruzord --processes true --max-processes 40 -a 127.0.0.1 -p 24441
+ruzord --pre-fork 4 -e redis --dsn 127.0.0.1,6379,,0 -a 127.0.0.1 -p 24441
+ruzord --detach /var/log/ruzord.out --homedir /var/lib/ruzor</code></pre>
+</section>
+
+<section class="section">
+  <h2>Signals</h2>
+  <p>Use <code>SIGTERM</code> for graceful shutdown and <code>SIGUSR1</code> to reload password and access files.</p>
+  <pre><code>kill -TERM $(cat /var/lib/ruzor/ruzord.pid)
+kill -USR1 $(cat /var/lib/ruzor/ruzord.pid)</code></pre>
+</section>
+
+      </article>
+    </div>
+  </main>
+
+  
+<footer class="site-footer">
+  <div>
+    <strong>Ruzor documentation</strong>
+    <span>GPL-3.0-only. Maintained by Bonjour Services.</span>
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/bonjourservices/ruzor">GitHub</a>
+    <a href="https://crates.io/crates/ruzor">crates.io</a>
+    <a href="https://www.pyzor.org/en/latest/">Pyzor docs</a>
+    <a href="mailto:contact@bonjour.email">contact@bonjour.email</a>
+  </div>
+</footer>
+
+</body>
+</html>

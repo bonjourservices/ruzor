@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Integrations - Ruzor Documentation</title>
+  <meta name="description" content="Examples for using Ruzor in mail filtering pipelines, public Ruzor server checks, Procmail-style rules, and digest batching.">
+  <meta name="author" content="Bonjour Services">
+  <meta name="keywords" content="Ruzor, Pyzor, Rust, spam detection, UDP, email filtering, GPL-3.0, public.ruzor.org, public.pyzor.org">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#D4FF00">
+  <link rel="canonical" href="https://bonjourservices.github.io/ruzor/documentation/integrations.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Ruzor Documentation">
+  <meta property="og:title" content="Integrations - Ruzor Documentation">
+  <meta property="og:description" content="Examples for using Ruzor in mail filtering pipelines, public Ruzor server checks, Procmail-style rules, and digest batching.">
+  <meta property="og:url" content="https://bonjourservices.github.io/ruzor/documentation/integrations.html">
+  <meta property="article:section" content="Integrations">
+  <meta property="article:modified_time" content="2026-05-28T00:00:00+00:00">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Integrations - Ruzor Documentation">
+  <meta name="twitter:description" content="Examples for using Ruzor in mail filtering pipelines, public Ruzor server checks, Procmail-style rules, and digest batching.">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Integrations - Ruzor Documentation",
+  "description": "Examples for using Ruzor in mail filtering pipelines, public Ruzor server checks, Procmail-style rules, and digest batching.",
+  "url": "https://bonjourservices.github.io/ruzor/documentation/integrations.html",
+  "inLanguage": "en",
+  "dateModified": "2026-05-28",
+  "author": {
+    "@type": "Organization",
+    "name": "Bonjour Services",
+    "email": "contact@bonjour.email",
+    "url": "https://github.com/bonjourservices/ruzor"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Bonjour Services",
+    "email": "contact@bonjour.email"
+  },
+  "isPartOf": {
+    "@type": "TechArticle",
+    "name": "Ruzor Documentation",
+    "url": "https://bonjourservices.github.io/ruzor/documentation/index.html"
+  },
+  "about": [
+    "Ruzor",
+    "Pyzor-compatible spam detection",
+    "Rust command-line utilities",
+    "UDP email digest checking"
+  ],
+  "mentions": [
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "Ruzor",
+      "codeRepository": "https://github.com/bonjourservices/ruzor",
+      "programmingLanguage": "Rust"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "ruzor crate",
+      "url": "https://crates.io/crates/ruzor",
+      "applicationCategory": "DeveloperApplication"
+    },
+    {
+      "@type": "CreativeWork",
+      "name": "Upstream Pyzor documentation",
+      "url": "https://www.pyzor.org/en/latest/"
+    }
+  ],
+  "license": "https://www.gnu.org/licenses/gpl-3.0.en.html",
+  "codeRepository": "https://github.com/bonjourservices/ruzor"
+}
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Ruzor documentation home">
+      <span class="brand-mark">RZ</span>
+      <span>Ruzor Docs</span>
+    </a>
+    <nav class="topnav" aria-label="Primary documentation navigation">
+      <a class="nav-link " href="index.html">Overview</a>
+<a class="nav-link " href="getting-started.html">Install</a>
+<a class="nav-link " href="client.html">Client</a>
+<a class="nav-link " href="server.html">Server</a>
+<a class="nav-link " href="configuration.html">Configuration</a>
+<a class="nav-link " href="protocol.html">Protocol</a>
+<a class="nav-link is-active" href="integrations.html">Integrations</a>
+<a class="nav-link " href="license.html">License</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero-band">
+      <div class="hero-grid">
+        <p class="eyebrow">Mail-flow examples</p>
+        <h1>Integrations</h1>
+        <p class="hero-copy">Rust-native Pyzor-compatible client and server documentation, built as static HTML and CSS for readable offline and hosted docs.</p>
+      </div>
+    </section>
+
+    <div class="doc-layout">
+      <aside class="side-rail" aria-label="Documentation links">
+        <span class="side-title">Documentation</span>
+        <a class="nav-link " href="index.html">Overview</a>
+<a class="nav-link " href="getting-started.html">Install</a>
+<a class="nav-link " href="client.html">Client</a>
+<a class="nav-link " href="server.html">Server</a>
+<a class="nav-link " href="configuration.html">Configuration</a>
+<a class="nav-link " href="protocol.html">Protocol</a>
+<a class="nav-link is-active" href="integrations.html">Integrations</a>
+<a class="nav-link " href="license.html">License</a>
+      </aside>
+      <article class="doc-content">
+        
+<section class="section">
+  <h2>Use In Mail Pipelines</h2>
+  <p>Ruzor is a command-line tool, so it can be inserted into mail filters that can pipe full message content to a command and make a decision from the exit status.</p>
+  <div class="callout">
+    <p>Test integrations against a private <code>ruzord</code> first. Do not send test <code>report</code> or <code>whitelist</code> traffic to a public service.</p>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Procmail Pattern</h2>
+  <p><code>ruzor check</code> returns success when a digest is reported above the configured threshold and not whitelisted above the whitelist threshold.</p>
+  <pre><code>:0 Wc
+| ruzor check
+
+:0 e
+$DEFAULT
+
+:0
+spam-folder</code></pre>
+</section>
+
+<section class="section">
+  <h2>Public Ruzor Endpoint</h2>
+  <pre><code>mkdir -p ~/.ruzor
+printf '%s\n' public.ruzor.org:24441 &gt; ~/.ruzor/servers
+ruzor ping
+ruzor check &lt; message.eml</code></pre>
+</section>
+
+<section class="section">
+  <h2>Batching By Digest</h2>
+  <p>When another system already computed or stored Pyzor digests, use <code>-s digests</code> to skip message parsing.</p>
+  <pre><code>ruzor -s digests check &lt; digests.txt
+ruzor -s digests report &lt; confirmed-spam-digests.txt</code></pre>
+</section>
+
+<section class="section">
+  <h2>ReadyExec Note</h2>
+  <p>Upstream Pyzor documents ReadyExec as a way to reduce Python startup overhead. Ruzor is a native binary and normally does not need that wrapper for startup reasons.</p>
+</section>
+
+      </article>
+    </div>
+  </main>
+
+  
+<footer class="site-footer">
+  <div>
+    <strong>Ruzor documentation</strong>
+    <span>GPL-3.0-only. Maintained by Bonjour Services.</span>
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/bonjourservices/ruzor">GitHub</a>
+    <a href="https://crates.io/crates/ruzor">crates.io</a>
+    <a href="https://www.pyzor.org/en/latest/">Pyzor docs</a>
+    <a href="mailto:contact@bonjour.email">contact@bonjour.email</a>
+  </div>
+</footer>
+
+</body>
+</html>
