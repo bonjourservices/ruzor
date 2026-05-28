@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x64
+            os: ubuntu-24.04
+            deps: sudo apt-get update && sudo apt-get install -y libgdbm-dev pkg-config
+          - name: macOS arm64
+            os: macos-15
+            deps: brew install gdbm pkg-config
+          - name: macOS Intel
+            os: macos-15-intel
+            deps: brew install gdbm pkg-config
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: ${{ matrix.deps }}
+
+      - name: Install stable Rust
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt --component clippy
+          rustup default stable
+
+      - name: Show versions
+        run: |
+          rustc --version
+          cargo --version
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Check default build
+        run: cargo check --locked
+
+      - name: Check no-gdbm build
+        run: cargo check --locked --no-default-features --features backend-redis,backend-mysql
+
+      - name: Clippy
+        run: cargo clippy --locked -- -D warnings
+
+      - name: Test
+        run: cargo test --locked
+
+      - name: Verify package
+        run: cargo package --locked

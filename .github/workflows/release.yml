@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build ${{ matrix.artifact }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            artifact: pyzor-linux-x86_64
+            deps: sudo apt-get update && sudo apt-get install -y libgdbm-dev pkg-config
+          - os: macos-15
+            artifact: pyzor-macos-arm64
+            deps: brew install gdbm pkg-config
+          - os: macos-15-intel
+            artifact: pyzor-macos-x86_64
+            deps: brew install gdbm pkg-config
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: ${{ matrix.deps }}
+
+      - name: Install stable Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - name: Verify package
+        run: cargo package --locked
+
+      - name: Build release binaries
+        run: cargo build --release --locked
+
+      - name: Create release archive
+        run: |
+          mkdir -p dist/${{ matrix.artifact }}
+          cp target/release/pyzor dist/${{ matrix.artifact }}/
+          cp target/release/pyzord dist/${{ matrix.artifact }}/
+          cp README.md LICENSE dist/${{ matrix.artifact }}/
+          tar -czf dist/${{ matrix.artifact }}.tar.gz -C dist ${{ matrix.artifact }}
+
+      - name: Upload release archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}.tar.gz
+          if-no-files-found: error
+
+  github-release:
+    name: Publish GitHub release
+    needs: build
+    runs-on: ubuntu-24.04
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download release archives
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/*.tar.gz --clobber
+          else
+            gh release create "$TAG" dist/*.tar.gz --title "$TAG" --generate-notes --verify-tag
+          fi
