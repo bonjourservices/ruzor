@@ -2,7 +2,6 @@
 
 [![CI](https://github.com/bonjourservices/ruzor/actions/workflows/ci.yml/badge.svg)](https://github.com/bonjourservices/ruzor/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/ruzor.svg)](https://crates.io/crates/ruzor)
-[![Docs.rs](https://docs.rs/ruzor/badge.svg)](https://docs.rs/ruzor)
 [![GitHub release](https://img.shields.io/github/v/release/bonjourservices/ruzor)](https://github.com/bonjourservices/ruzor/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 
