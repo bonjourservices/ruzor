@@ -4,11 +4,11 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-use pyzor::account::Account;
-use pyzor::client::{BatchClient, Client};
-use pyzor::config::Address;
-use pyzor::error::PyzorError;
-use pyzor::message::{Message, ThreadId};
+use ruzor::account::Account;
+use ruzor::client::{BatchClient, Client};
+use ruzor::config::Address;
+use ruzor::error::PyzorError;
+use ruzor::message::{Message, ThreadId};
 
 const DIGEST: &str = "2aedaac999d71421c9ee49b9d81f627a7bc570aa";
 
@@ -42,7 +42,7 @@ impl Command {
         matches!(self, Self::Report | Self::Whitelist)
     }
 
-    fn run(self, client: &Client, address: &Address) -> pyzor::Result<Message> {
+    fn run(self, client: &Client, address: &Address) -> ruzor::Result<Message> {
         match self {
             Self::Ping => client.ping(address),
             Self::Pong => client.pong(DIGEST, address),
@@ -96,7 +96,7 @@ fn client_uses_matching_account_for_server_address() {
             address.clone(),
             Account::new("TestUser", Some("TestSalt".to_string()), "TestKey"),
         )]);
-        let client = Client::new(accounts, Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+        let client = Client::new(accounts, Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
         client.ping(address)
     });
 
@@ -121,7 +121,7 @@ fn client_rejects_unexpected_ok_range_thread_like_reference() {
 fn client_timeout_maps_to_reference_timeout_error() {
     let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
     let address = socket.local_addr().unwrap();
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     let result = client.ping(&("127.0.0.1".to_string(), address.port()));
 
     assert!(
@@ -201,9 +201,9 @@ fn batch_client_force_sends_partial_report_and_whitelist_batches() {
     }
 }
 
-fn capture_round_trip<F>(reply_mode: ReplyMode, action: F) -> (Message, pyzor::Result<Message>)
+fn capture_round_trip<F>(reply_mode: ReplyMode, action: F) -> (Message, ruzor::Result<Message>)
 where
-    F: FnOnce(&Address) -> pyzor::Result<Message>,
+    F: FnOnce(&Address) -> ruzor::Result<Message>,
 {
     let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
     socket
@@ -211,7 +211,7 @@ where
         .unwrap();
     let address = ("127.0.0.1".to_string(), socket.local_addr().unwrap().port());
     let handle = thread::spawn(move || {
-        let mut buf = [0u8; pyzor::MAX_PACKET_SIZE];
+        let mut buf = [0u8; ruzor::MAX_PACKET_SIZE];
         let (len, peer) = socket.recv_from(&mut buf).unwrap();
         let request = Message::parse(&buf[..len]);
         let request_thread = request.thread().unwrap().0;
@@ -251,7 +251,7 @@ fn assert_no_batch_send_while_alive(command: &str, count: usize, flush_before_co
     for _ in 0..count {
         add_batch_digest(&mut batch, command, &address);
     }
-    let mut buf = [0u8; pyzor::MAX_PACKET_SIZE];
+    let mut buf = [0u8; ruzor::MAX_PACKET_SIZE];
     let error = socket
         .recv_from(&mut buf)
         .expect_err("partial live batch should not send yet");
@@ -274,7 +274,7 @@ where
     let address = ("127.0.0.1".to_string(), socket.local_addr().unwrap().port());
     let (tx, rx) = mpsc::channel();
     let handle = thread::spawn(move || {
-        let mut buf = [0u8; pyzor::MAX_PACKET_SIZE];
+        let mut buf = [0u8; ruzor::MAX_PACKET_SIZE];
         let (len, _peer) = socket
             .recv_from(&mut buf)
             .expect("batch drop should force partial send");
@@ -307,7 +307,7 @@ where
     let address = ("127.0.0.1".to_string(), socket.local_addr().unwrap().port());
     let (tx, rx) = mpsc::channel();
     let handle = thread::spawn(move || {
-        let mut buf = [0u8; pyzor::MAX_PACKET_SIZE];
+        let mut buf = [0u8; ruzor::MAX_PACKET_SIZE];
         let message = match socket.recv_from(&mut buf) {
             Ok((len, _peer)) => Some(Message::parse(&buf[..len])),
             Err(error)

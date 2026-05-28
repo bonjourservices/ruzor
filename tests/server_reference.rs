@@ -1,12 +1,12 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
-use pyzor::Result;
-use pyzor::account::{Account, sign_for_account};
-use pyzor::engines::{DigestDatabase, Record};
-use pyzor::error::PyzorError;
-use pyzor::message::Message;
-use pyzor::server::handle_packet;
+use ruzor::Result;
+use ruzor::account::{Account, sign_for_account};
+use ruzor::engines::{DigestDatabase, Record};
+use ruzor::error::PyzorError;
+use ruzor::message::Message;
+use ruzor::server::handle_packet;
 
 const DIGEST: &str = "2aedaac999d71421c9ee49b9d81f627a7bc570aa";
 
@@ -288,7 +288,7 @@ fn signed_request(op: &str, thread: u16, user: &str, key: &str) -> String {
     sign_for_account(
         &mut msg,
         &Account::new(user, None, key),
-        pyzor::account::now_timestamp(),
+        ruzor::account::now_timestamp(),
     );
     msg.as_string()
 }

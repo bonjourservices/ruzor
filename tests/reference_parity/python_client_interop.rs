@@ -6,8 +6,8 @@ use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use pyzor::client::Client;
-use pyzor::config::Address;
+use ruzor::client::Client;
+use ruzor::config::Address;
 
 const MSG: &str = "Newsgroups:
 Date: Wed, 10 Apr 2002 22:23:51 -0400 (EDT)
@@ -27,7 +27,7 @@ fn python_client_talks_to_rust_server_process() {
     std::fs::write(homedir.join("servers"), format!("127.0.0.1:{port}\n")).unwrap();
     let db_path = homedir.join("pyzord.db");
 
-    let mut server = Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    let mut server = Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .arg("--homedir")
         .arg(&homedir)
         .arg("--access-file")
@@ -108,7 +108,7 @@ fn run_python_client(
 }
 
 fn run_rust_client(homedir: &std::path::Path, command: &str, input: &str) -> std::process::Output {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_pyzor"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_ruzor"))
         .arg("--homedir")
         .arg(homedir)
         .arg("-t")
@@ -129,7 +129,7 @@ fn run_rust_client(homedir: &std::path::Path, command: &str, input: &str) -> std
 }
 
 fn wait_for_server(server: &mut Child, address: &Address) {
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..50 {
         if let Some(status) = server.try_wait().expect("poll pyzord") {
             panic!("pyzord exited before readiness: {status}");

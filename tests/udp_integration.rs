@@ -5,10 +5,10 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use pyzor::client::Client;
-use pyzor::config::Address;
-use pyzor::engines::FileDatabase;
-use pyzor::serve_socket_until_shutdown;
+use ruzor::client::Client;
+use ruzor::config::Address;
+use ruzor::engines::FileDatabase;
+use ruzor::serve_socket_until_shutdown;
 
 #[test]
 fn rust_client_talks_to_rust_udp_server() {
@@ -32,7 +32,7 @@ fn rust_client_talks_to_rust_udp_server() {
         serve_socket_until_shutdown(socket, db, accounts, acl, false, server_shutdown)
     });
 
-    let client = Client::new(HashMap::new(), Some(2), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(2), ruzor::digest::DIGEST_SPEC.to_vec());
     assert!(client.ping(&address).unwrap().is_ok());
     assert!(client.report(digest, &address).unwrap().is_ok());
 

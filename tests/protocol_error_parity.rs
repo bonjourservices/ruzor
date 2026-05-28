@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
-use pyzor::engines::FileDatabase;
-use pyzor::server::handle_packet;
+use ruzor::engines::FileDatabase;
+use ruzor::server::handle_packet;
 
 #[test]
 fn unsupported_version_diagnostic_matches_python_server() {

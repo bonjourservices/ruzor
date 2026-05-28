@@ -12,10 +12,10 @@ use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use pyzor::client::Client;
-use pyzor::config::Address;
-use pyzor::engines::FileDatabase;
-use pyzor::serve_socket_until_shutdown;
+use ruzor::client::Client;
+use ruzor::config::Address;
+use ruzor::engines::FileDatabase;
+use ruzor::serve_socket_until_shutdown;
 
 const DIGEST: &str = "7421216f915a87e02da034cc483f5c876e1a1338";
 const SIGTERM: i32 = 15;
@@ -44,7 +44,7 @@ fn mysql_process_mode_forwards_reports_to_remote_servers() {
     let remote_address: Address = ("127.0.0.1".to_string(), remote.port);
     let dsn = "localhost,pyzor,secret,pyzord,public";
 
-    let mut local = Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    let mut local = Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .env("PYZOR_MYSQL_BIN", &mysql_bin)
         .env("PYZOR_FAKE_MYSQL_STATE", &state_path)
         .arg("--homedir")
@@ -71,10 +71,10 @@ fn mysql_process_mode_forwards_reports_to_remote_servers() {
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("spawn pyzord with MySQL process forwarding");
+        .expect("spawn ruzord with MySQL process forwarding");
 
     wait_for_server(&mut local, &local_address);
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..10 {
         assert!(client.report(DIGEST, &local_address).unwrap().is_ok());
     }
@@ -107,7 +107,7 @@ fn mysql_prefork_mode_flushes_forwarded_reports_to_remote_servers_on_shutdown() 
     let remote_address: Address = ("127.0.0.1".to_string(), remote.port);
     let dsn = "localhost,pyzor,secret,pyzord,public";
 
-    let mut local = Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    let mut local = Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .env("PYZOR_MYSQL_BIN", &mysql_bin)
         .env("PYZOR_FAKE_MYSQL_STATE", &state_path)
         .arg("--homedir")
@@ -132,10 +132,10 @@ fn mysql_prefork_mode_flushes_forwarded_reports_to_remote_servers_on_shutdown() 
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("spawn pyzord with MySQL pre-fork forwarding");
+        .expect("spawn ruzord with MySQL pre-fork forwarding");
 
     wait_for_server(&mut local, &local_address);
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..4 {
         assert!(client.report(DIGEST, &local_address).unwrap().is_ok());
     }
@@ -220,14 +220,14 @@ save()
 }
 
 fn wait_for_server(server: &mut Child, address: &Address) {
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..100 {
-        if let Some(status) = server.try_wait().expect("poll pyzord") {
+        if let Some(status) = server.try_wait().expect("poll ruzord") {
             let mut stderr = String::new();
             if let Some(mut pipe) = server.stderr.take() {
                 let _ = pipe.read_to_string(&mut stderr);
             }
-            panic!("pyzord exited before readiness: {status}\n{stderr}");
+            panic!("ruzord exited before readiness: {status}\n{stderr}");
         }
 
         if client
@@ -239,7 +239,7 @@ fn wait_for_server(server: &mut Child, address: &Address) {
         }
         thread::sleep(Duration::from_millis(50));
     }
-    panic!("pyzord did not become ready on {}:{}", address.0, address.1);
+    panic!("ruzord did not become ready on {}:{}", address.0, address.1);
 }
 
 fn wait_for_count(client: &Client, address: &Address, count: &str, wl_count: &str) {
@@ -272,7 +272,7 @@ fn terminate(mut child: Child) {
     // SAFETY: Calls POSIX kill with a child pid owned by this test process.
     let _ = unsafe { kill(child.id() as i32, SIGTERM) };
     for _ in 0..50 {
-        if child.try_wait().expect("poll pyzord exit").is_some() {
+        if child.try_wait().expect("poll ruzord exit").is_some() {
             return;
         }
         thread::sleep(Duration::from_millis(50));
@@ -284,7 +284,7 @@ fn terminate(mut child: Child) {
 struct TestServer {
     port: u16,
     shutdown: Arc<AtomicBool>,
-    handle: Option<JoinHandle<pyzor::Result<()>>>,
+    handle: Option<JoinHandle<ruzor::Result<()>>>,
     db_path: PathBuf,
 }
 
@@ -292,7 +292,7 @@ impl TestServer {
     fn start(name: &str) -> Self {
         let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
         let port = socket.local_addr().unwrap().port();
-        let db_path = temp_dir(name).join("pyzord.db");
+        let db_path = temp_dir(name).join("ruzord.db");
         let db = Arc::new(Mutex::new(FileDatabase::open(&db_path).unwrap()));
         let accounts = Arc::new(HashMap::new());
         let acl = Arc::new(acl(&[

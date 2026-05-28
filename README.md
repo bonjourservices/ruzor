@@ -1,14 +1,14 @@
-# pyzor
+# Ruzor
 
-[![CI](https://github.com/bonjourservices/pyzor/actions/workflows/ci.yml/badge.svg)](https://github.com/bonjourservices/pyzor/actions/workflows/ci.yml)
-[![Crates.io](https://img.shields.io/crates/v/pyzor.svg)](https://crates.io/crates/pyzor)
-[![Docs.rs](https://docs.rs/pyzor/badge.svg)](https://docs.rs/pyzor)
-[![GitHub release](https://img.shields.io/github/v/release/bonjourservices/pyzor)](https://github.com/bonjourservices/pyzor/releases)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![CI](https://github.com/bonjourservices/ruzor/actions/workflows/ci.yml/badge.svg)](https://github.com/bonjourservices/ruzor/actions/workflows/ci.yml)
+[![Crates.io](https://img.shields.io/crates/v/ruzor.svg)](https://crates.io/crates/ruzor)
+[![Docs.rs](https://docs.rs/ruzor/badge.svg)](https://docs.rs/ruzor)
+[![GitHub release](https://img.shields.io/github/v/release/bonjourservices/ruzor)](https://github.com/bonjourservices/ruzor/releases)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 
-A Rust implementation of the Pyzor 1.1.2 UDP client and server.
+Ruzor is the Rust port of the Pyzor 1.1.2 UDP client and server.
 
-Pyzor is a collaborative, networked spam detection system that identifies messages by digest and lets clients check, report, or whitelist those digests against a Pyzor server. This crate provides the `pyzor` client and `pyzord` daemon as a Rust package with command-line behavior and storage formats compatible with the upstream Pyzor 1.1 documentation.
+Pyzor is a collaborative, networked spam detection system that identifies messages by digest and lets clients check, report, or whitelist those digests against a Pyzor server. This crate provides the `ruzor` client and `ruzord` daemon as a Rust package with command-line behavior and storage formats compatible with the upstream Pyzor 1.1 documentation.
 
 ## Compatibility
 
@@ -26,14 +26,14 @@ Upstream Pyzor documentation is available at <https://www.pyzor.org/en/latest/>.
 
 ### Prebuilt Binaries
 
-Download release archives from <https://github.com/bonjourservices/pyzor/releases>. Release archives contain `pyzor`, `pyzord`, `README.md`, and `LICENSE` for the target platform. The default release binaries use the GNU gdbm backend and require GNU gdbm at runtime.
+Download release archives from <https://github.com/bonjourservices/ruzor/releases>. Release archives contain `ruzor`, `ruzord`, `README.md`, and `LICENSE` for the target platform. The default release binaries use the GNU gdbm backend and require GNU gdbm at runtime.
 
 ### Cargo
 
 Install the full package with the default backends:
 
 ```sh
-cargo install pyzor --locked
+cargo install ruzor --locked
 ```
 
 The default build includes the GNU gdbm backend, so system GNU gdbm headers/libraries must be available:
@@ -49,7 +49,7 @@ brew install gdbm pkg-config
 For a build without the gdbm backend:
 
 ```sh
-cargo install pyzor --no-default-features --features backend-redis,backend-mysql --locked
+cargo install ruzor --no-default-features --features backend-redis,backend-mysql --locked
 ```
 
 ## Quick Start
@@ -57,43 +57,43 @@ cargo install pyzor --no-default-features --features backend-redis,backend-mysql
 Create a small test message:
 
 ```sh
-cat > /tmp/pyzor-msg.eml <<'EOF'
+cat > /tmp/ruzor-msg.eml <<'EOF'
 From: a@example.com
 To: b@example.com
 Subject: test
 
-hello pyzor
+hello ruzor
 EOF
 ```
 
 Print the Pyzor digest without contacting a server:
 
 ```sh
-pyzor digest < /tmp/pyzor-msg.eml
+ruzor digest < /tmp/ruzor-msg.eml
 ```
 
 Start a local server in one terminal:
 
 ```sh
-mkdir -p /tmp/pyzor-server /tmp/pyzor-client
-printf '127.0.0.1:24441\n' > /tmp/pyzor-client/servers
-pyzord --homedir /tmp/pyzor-server -a 127.0.0.1 -p 24441
+mkdir -p /tmp/ruzor-server /tmp/ruzor-client
+printf '127.0.0.1:24441\n' > /tmp/ruzor-client/servers
+ruzord --homedir /tmp/ruzor-server -a 127.0.0.1 -p 24441
 ```
 
 Use the client from another terminal:
 
 ```sh
-pyzor --homedir /tmp/pyzor-client ping
-pyzor --homedir /tmp/pyzor-client report < /tmp/pyzor-msg.eml
-pyzor --homedir /tmp/pyzor-client check < /tmp/pyzor-msg.eml
-pyzor --homedir /tmp/pyzor-client info < /tmp/pyzor-msg.eml
+ruzor --homedir /tmp/ruzor-client ping
+ruzor --homedir /tmp/ruzor-client report < /tmp/ruzor-msg.eml
+ruzor --homedir /tmp/ruzor-client check < /tmp/ruzor-msg.eml
+ruzor --homedir /tmp/ruzor-client info < /tmp/ruzor-msg.eml
 ```
 
 Check by digest rather than by message content:
 
 ```sh
-pyzor digest < /tmp/pyzor-msg.eml > /tmp/pyzor-digest.txt
-pyzor --homedir /tmp/pyzor-client -s digests check < /tmp/pyzor-digest.txt
+ruzor digest < /tmp/ruzor-msg.eml > /tmp/ruzor-digest.txt
+ruzor --homedir /tmp/ruzor-client -s digests check < /tmp/ruzor-digest.txt
 ```
 
 ## Client Usage
@@ -101,23 +101,23 @@ pyzor --homedir /tmp/pyzor-client -s digests check < /tmp/pyzor-digest.txt
 The client reads from stdin for message-oriented commands:
 
 ```sh
-pyzor [options] command
+ruzor [options] command
 ```
 
 Common commands:
 
 ```sh
-pyzor digest < message.eml
-pyzor predigest < message.eml
-pyzor check < message.eml
-pyzor report < message.eml
-pyzor whitelist < message.eml
-pyzor info < message.eml
-pyzor ping
-pyzor pong < message.eml
-pyzor local_whitelist < message.eml
-pyzor local_unwhitelist < message.eml
-pyzor genkey
+ruzor digest < message.eml
+ruzor predigest < message.eml
+ruzor check < message.eml
+ruzor report < message.eml
+ruzor whitelist < message.eml
+ruzor info < message.eml
+ruzor ping
+ruzor pong < message.eml
+ruzor local_whitelist < message.eml
+ruzor local_unwhitelist < message.eml
+ruzor genkey
 ```
 
 Useful options:
@@ -143,16 +143,16 @@ If no server file is configured, Pyzor clients default to the public Pyzor serve
 Run a server with the default GNU gdbm backend:
 
 ```sh
-pyzord --homedir /var/lib/pyzor -a 0.0.0.0 -p 24441
+ruzord --homedir /var/lib/ruzor -a 0.0.0.0 -p 24441
 ```
 
 Use explicit paths for database, passwd, and ACL files:
 
 ```sh
-pyzord --homedir /var/lib/pyzor \
-  --dsn /var/lib/pyzor/pyzord.db \
-  --password-file pyzord.passwd \
-  --access-file pyzord.access \
+ruzord --homedir /var/lib/ruzor \
+  --dsn /var/lib/ruzor/ruzord.db \
+  --password-file ruzord.passwd \
+  --access-file ruzord.access \
   -a 0.0.0.0 -p 24441
 ```
 
@@ -160,13 +160,13 @@ Backend examples:
 
 ```sh
 # Redis v1 hash backend
-pyzord -e redis --dsn 127.0.0.1,6379,,0 -a 127.0.0.1 -p 24441
+ruzord -e redis --dsn 127.0.0.1,6379,,0 -a 127.0.0.1 -p 24441
 
 # Legacy Redis v0 string backend
-pyzord -e redis_v0 --dsn 127.0.0.1,6379,,0 -a 127.0.0.1 -p 24441
+ruzord -e redis_v0 --dsn 127.0.0.1,6379,,0 -a 127.0.0.1 -p 24441
 
 # MySQL backend: host,user,password,database,table
-pyzord -e mysql --dsn 127.0.0.1,pyzor,secret,pyzord,digests -a 127.0.0.1 -p 24441
+ruzord -e mysql --dsn 127.0.0.1,ruzor,secret,ruzord,digests -a 127.0.0.1 -p 24441
 ```
 
 The MySQL table must use the upstream Pyzor schema:
@@ -187,31 +187,31 @@ CREATE TABLE digests (
 Operational options:
 
 ```sh
-pyzord --threads true --max-threads 10 --db-connections 10 -a 127.0.0.1 -p 24441
-pyzord --processes true --max-processes 40 -a 127.0.0.1 -p 24441
-pyzord --pre-fork 4 -e redis --dsn 127.0.0.1,6379,,0 -a 127.0.0.1 -p 24441
-pyzord --detach /var/log/pyzord.out --homedir /var/lib/pyzor
+ruzord --threads true --max-threads 10 --db-connections 10 -a 127.0.0.1 -p 24441
+ruzord --processes true --max-processes 40 -a 127.0.0.1 -p 24441
+ruzord --pre-fork 4 -e redis --dsn 127.0.0.1,6379,,0 -a 127.0.0.1 -p 24441
+ruzord --detach /var/log/ruzord.out --homedir /var/lib/ruzor
 ```
 
 On Unix, send `SIGTERM` for graceful shutdown and `SIGUSR1` to reload passwd/access files:
 
 ```sh
-kill -TERM $(cat /var/lib/pyzor/pyzord.pid)
-kill -USR1 $(cat /var/lib/pyzor/pyzord.pid)
+kill -TERM $(cat /var/lib/ruzor/ruzord.pid)
+kill -USR1 $(cat /var/lib/ruzor/ruzord.pid)
 ```
 
 ## Configuration Files
 
-By default, both commands use `~/.pyzor` when `HOME` is set, otherwise `/etc/pyzor`. Paths in config files are resolved relative to `--homedir` unless absolute.
+By default, both commands use `~/.ruzor` when `HOME` is set, otherwise `/etc/ruzor`. Paths in config files are resolved relative to `--homedir` unless absolute.
 
 Common files:
 
 - `servers`: one `host:port` server per line for client operations.
 - `accounts`: client credentials in upstream Pyzor format.
 - `whitelist`: local client whitelist digests.
-- `pyzord.passwd`: server account database.
-- `pyzord.access`: server ACL file.
-- `pyzord.db`: default GNU gdbm digest database.
+- `ruzord.passwd`: server account database.
+- `ruzord.access`: server ACL file.
+- `ruzord.db`: default GNU gdbm digest database.
 
 If no access file exists, anonymous users may `check`, `report`, `ping`, `pong`, and `info`; `whitelist` is denied by default.
 
@@ -232,8 +232,8 @@ cargo build --release --locked
 Run directly from the checkout:
 
 ```sh
-cargo run --bin pyzor -- digest < message.eml
-cargo run --bin pyzord -- --homedir .pyzor -a 127.0.0.1 -p 24441
+cargo run --bin ruzor -- digest < message.eml
+cargo run --bin ruzord -- --homedir .ruzor -a 127.0.0.1 -p 24441
 ```
 
 ## Test
@@ -270,7 +270,7 @@ cargo test --test gdbm_native_backend -- --test-threads=1
 GitHub releases are tag-driven. To cut a release:
 
 ```sh
-git tag -a v0.1.0 -m 'pyzor v0.1.0'
+git tag -a v0.1.0 -m 'ruzor v0.1.0'
 git push origin v0.1.0
 ```
 
@@ -278,4 +278,4 @@ The release workflow builds with stable Rust, verifies the crate package, and up
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+GPL-3.0-only. See [LICENSE](LICENSE).

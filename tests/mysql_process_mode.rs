@@ -8,8 +8,8 @@ use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use pyzor::client::Client;
-use pyzor::config::Address;
+use ruzor::client::Client;
+use ruzor::config::Address;
 
 const DIGEST: &str = "7421216f915a87e02da034cc483f5c876e1a1338";
 const STALE_DIGEST: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
@@ -37,7 +37,7 @@ fn mysql_cleanup_age_reorganizes_stale_records_on_open() {
     let address: Address = ("127.0.0.1".to_string(), port);
     let dsn = "localhost,pyzor,secret,pyzord,public";
 
-    let mut server = Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    let mut server = Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .env("PYZOR_MYSQL_BIN", &mysql_bin)
         .env("PYZOR_FAKE_MYSQL_STATE", &state_path)
         .arg("--homedir")
@@ -60,10 +60,10 @@ fn mysql_cleanup_age_reorganizes_stale_records_on_open() {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .expect("spawn pyzord with MySQL cleanup age");
+        .expect("spawn ruzord with MySQL cleanup age");
 
     wait_for_server(&mut server, &address);
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     let stale = client.check(STALE_DIGEST, &address).unwrap();
     assert_eq!(stale.get("Count"), Some("0"));
     assert_eq!(stale.get("WL-Count"), Some("0"));
@@ -91,7 +91,7 @@ fn mysql_cleanup_age_zero_keeps_stale_records_like_python() {
     let address: Address = ("127.0.0.1".to_string(), port);
     let dsn = "localhost,pyzor,secret,pyzord,public";
 
-    let mut server = Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    let mut server = Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .env("PYZOR_MYSQL_BIN", &mysql_bin)
         .env("PYZOR_FAKE_MYSQL_STATE", &state_path)
         .arg("--homedir")
@@ -114,10 +114,10 @@ fn mysql_cleanup_age_zero_keeps_stale_records_like_python() {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .expect("spawn pyzord with disabled MySQL cleanup age");
+        .expect("spawn ruzord with disabled MySQL cleanup age");
 
     wait_for_server(&mut server, &address);
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     let stale = client.check(STALE_DIGEST, &address).unwrap();
     assert_eq!(stale.get("Count"), Some("24"));
     assert_eq!(stale.get("WL-Count"), Some("0"));
@@ -137,7 +137,7 @@ fn mysql_process_mode_forks_workers_and_preserves_counts() {
     let address: Address = ("127.0.0.1".to_string(), port);
     let dsn = "localhost,pyzor,secret,pyzord,public";
 
-    let mut server = Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    let mut server = Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .env("PYZOR_MYSQL_BIN", &mysql_bin)
         .env("PYZOR_FAKE_MYSQL_STATE", &state_path)
         .arg("--homedir")
@@ -162,10 +162,10 @@ fn mysql_process_mode_forks_workers_and_preserves_counts() {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .expect("spawn pyzord with MySQL process mode");
+        .expect("spawn ruzord with MySQL process mode");
 
     wait_for_server(&mut server, &address);
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..3 {
         assert!(client.report(DIGEST, &address).unwrap().is_ok());
     }
@@ -192,7 +192,7 @@ fn mysql_prefork_workers_preserve_counts() {
     let address: Address = ("127.0.0.1".to_string(), port);
     let dsn = "localhost,pyzor,secret,pyzord,public";
 
-    let mut server = Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    let mut server = Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .env("PYZOR_MYSQL_BIN", &mysql_bin)
         .env("PYZOR_FAKE_MYSQL_STATE", &state_path)
         .arg("--homedir")
@@ -215,10 +215,10 @@ fn mysql_prefork_workers_preserve_counts() {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .expect("spawn pyzord with MySQL pre-fork mode");
+        .expect("spawn ruzord with MySQL pre-fork mode");
 
     wait_for_server(&mut server, &address);
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..4 {
         assert!(client.report(DIGEST, &address).unwrap().is_ok());
     }
@@ -314,10 +314,10 @@ save()
 }
 
 fn wait_for_server(server: &mut Child, address: &Address) {
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..100 {
-        if let Some(status) = server.try_wait().expect("poll pyzord") {
-            panic!("pyzord exited before readiness: {status}");
+        if let Some(status) = server.try_wait().expect("poll ruzord") {
+            panic!("ruzord exited before readiness: {status}");
         }
         if client
             .ping(address)
@@ -328,13 +328,13 @@ fn wait_for_server(server: &mut Child, address: &Address) {
         }
         thread::sleep(Duration::from_millis(50));
     }
-    panic!("pyzord did not become ready on {}:{}", address.0, address.1);
+    panic!("ruzord did not become ready on {}:{}", address.0, address.1);
 }
 
 fn terminate(mut child: Child) {
     let _ = unsafe { kill(child.id() as i32, SIGTERM) };
     for _ in 0..50 {
-        if child.try_wait().expect("poll pyzord exit").is_some() {
+        if child.try_wait().expect("poll ruzord exit").is_some() {
             return;
         }
         thread::sleep(Duration::from_millis(50));

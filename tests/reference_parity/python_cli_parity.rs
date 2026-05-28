@@ -8,8 +8,8 @@ use std::process::{Child, Command, Output, Stdio};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use pyzor::client::Client;
-use pyzor::config::Address;
+use ruzor::client::Client;
+use ruzor::config::Address;
 
 #[cfg(unix)]
 const PRIO_PROCESS: c_int = 0;
@@ -779,7 +779,7 @@ fn run_python_pyzor_args(homedir: &Path, args: &[&str], input: &str) -> Output {
 }
 
 fn run_rust_pyzor_args(homedir: &Path, args: &[&str], input: &str) -> Output {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_pyzor"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_ruzor"))
         .env("TZ", "UTC")
         .arg("--homedir")
         .arg(homedir)
@@ -871,7 +871,7 @@ impl StaticResponseServer {
             .unwrap();
         let port = socket.local_addr().unwrap().port();
         let handle = thread::spawn(move || {
-            let mut buf = [0u8; pyzor::MAX_PACKET_SIZE];
+            let mut buf = [0u8; ruzor::MAX_PACKET_SIZE];
             for _ in 0..requests {
                 let (len, peer) = socket.recv_from(&mut buf).expect("receive info request");
                 let request = String::from_utf8_lossy(&buf[..len]);
@@ -1005,7 +1005,7 @@ fn spawn_rust_config_log_server(
     access: &str,
     log_file: &str,
 ) -> Child {
-    Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .env("TZ", "UTC")
         .arg("--homedir")
         .arg(homedir)
@@ -1093,7 +1093,7 @@ fn spawn_python_nice_server(homedir: &Path, port: u16) -> Child {
 fn spawn_rust_nice_server(homedir: &Path, port: u16) -> Child {
     std::fs::write(homedir.join("pyzord.passwd"), "").unwrap();
     std::fs::write(homedir.join("pyzord.access"), "ALL : anonymous : allow\n").unwrap();
-    Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .env("TZ", "UTC")
         .arg("--homedir")
         .arg(homedir)
@@ -1119,7 +1119,7 @@ fn spawn_rust_nice_server(homedir: &Path, port: u16) -> Child {
 fn spawn_rust_debug_server(homedir: &Path, port: u16, log_file: &Path) -> Child {
     std::fs::write(homedir.join("pyzord.passwd"), "").unwrap();
     std::fs::write(homedir.join("pyzord.access"), "ALL : anonymous : allow\n").unwrap();
-    Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .env("TZ", "UTC")
         .arg("--homedir")
         .arg(homedir)
@@ -1146,7 +1146,7 @@ fn spawn_rust_debug_server(homedir: &Path, port: u16, log_file: &Path) -> Child 
 fn spawn_rust_usage_server(homedir: &Path, port: u16, usage_log: &Path) -> Child {
     std::fs::write(homedir.join("pyzord.passwd"), "").unwrap();
     std::fs::write(homedir.join("pyzord.access"), "ALL : anonymous : allow\n").unwrap();
-    Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .env("TZ", "UTC")
         .arg("--homedir")
         .arg(homedir)
@@ -1173,7 +1173,7 @@ fn send_raw_packet(address: &Address, packet: &str) -> std::io::Result<String> {
     let socket = UdpSocket::bind("127.0.0.1:0")?;
     socket.set_read_timeout(Some(Duration::from_millis(200)))?;
     socket.send_to(packet.as_bytes(), (address.0.as_str(), address.1))?;
-    let mut buf = [0u8; pyzor::MAX_PACKET_SIZE];
+    let mut buf = [0u8; ruzor::MAX_PACKET_SIZE];
     let (len, _) = socket.recv_from(&mut buf)?;
     Ok(String::from_utf8_lossy(&buf[..len]).to_string())
 }
@@ -1198,7 +1198,7 @@ fn wait_for_raw_response(server: &mut Child, address: &Address, packet: &str) {
 }
 
 fn wait_for_logged_ping(server: &mut Child, address: &Address) {
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..50 {
         if let Some(status) = server.try_wait().expect("poll pyzord") {
             panic!("pyzord exited before readiness: {status}");
@@ -1344,7 +1344,7 @@ fn run_python_pyzord_args(homedir: &Path, args: &[&str]) -> Output {
 }
 
 fn run_rust_pyzord_args(homedir: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .arg("--homedir")
         .arg(homedir)
         .args(args)

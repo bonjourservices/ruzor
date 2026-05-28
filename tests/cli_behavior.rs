@@ -8,10 +8,10 @@ use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use pyzor::client::Client;
-use pyzor::config::Address;
-use pyzor::engines::FileDatabase;
-use pyzor::serve_socket_until_shutdown;
+use ruzor::client::Client;
+use ruzor::config::Address;
+use ruzor::engines::FileDatabase;
+use ruzor::serve_socket_until_shutdown;
 
 const MSG: &str = "Newsgroups:
 Date: Wed, 10 Apr 2002 22:23:51 -0400 (EDT)
@@ -298,8 +298,8 @@ fn cli_process_gdbm_core_functional_mixin_matches_python() {
     let homedir = temp_dir("cli-process-gdbm-core-home");
     let port = free_udp_port();
     std::fs::write(homedir.join("servers"), format!("127.0.0.1:{port}\n")).unwrap();
-    std::fs::write(homedir.join("pyzord.passwd"), "").unwrap();
-    std::fs::write(homedir.join("pyzord.access"), "ALL : anonymous : allow\n").unwrap();
+    std::fs::write(homedir.join("ruzord.passwd"), "").unwrap();
+    std::fs::write(homedir.join("ruzord.access"), "ALL : anonymous : allow\n").unwrap();
     let mut server = spawn_pyzord_process(&homedir, port);
     let address: Address = ("127.0.0.1".to_string(), port);
     wait_for_process_server(&mut server, &address);
@@ -394,8 +394,8 @@ fn cli_repeated_input_commands_consume_stdin_like_python() {
     let homedir = temp_dir("cli-repeated-input-consume-home");
     let output = run_pyzor(&homedir, &["digest", "digest"], MSG);
     assert!(output.status.success(), "{output:?}");
-    let first = pyzor::digest::digest_message(MSG.as_bytes());
-    let second = pyzor::digest::digest_message(b"");
+    let first = ruzor::digest::digest_message(MSG.as_bytes());
+    let second = ruzor::digest::digest_message(b"");
     assert_eq!(
         String::from_utf8(output.stdout).unwrap(),
         format!("{first}\n{second}\n")
@@ -413,7 +413,7 @@ fn cli_help_matches_python_optparse_and_exits_before_homedir() {
     assert!(output.status.success(), "{output:?}");
     assert_eq!(String::from_utf8_lossy(&output.stderr), "");
     let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.starts_with("Usage: pyzor [options]\n\nRead data from stdin"));
+    assert!(stdout.starts_with("Usage: ruzor [options]\n\nRead data from stdin"));
     assert!(stdout.contains("  -h, --help            show this help message and exit"));
     assert!(stdout.contains("  -V, --version         print version and exit"));
     assert!(
@@ -434,7 +434,7 @@ fn cli_unknown_option_uses_optparse_error_status_and_does_not_create_homedir() {
     assert_eq!(String::from_utf8_lossy(&output.stdout), "");
     assert_eq!(
         String::from_utf8_lossy(&output.stderr),
-        "Usage: pyzor [options]\n\npyzor: error: no such option: --bogus\n"
+        "Usage: ruzor [options]\n\nruzor: error: no such option: --bogus\n"
     );
     assert!(
         !homedir.exists(),
@@ -702,7 +702,7 @@ fn cli_multiple_servers_match_python_functional_test() {
 struct TestServer {
     port: u16,
     shutdown: Arc<AtomicBool>,
-    handle: Option<JoinHandle<pyzor::Result<()>>>,
+    handle: Option<JoinHandle<ruzor::Result<()>>>,
     db_path: PathBuf,
 }
 
@@ -710,7 +710,7 @@ impl TestServer {
     fn start(name: &str) -> Self {
         let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
         let port = socket.local_addr().unwrap().port();
-        let db_path = temp_dir(name).join("pyzord.db");
+        let db_path = temp_dir(name).join("ruzord.db");
         let db = Arc::new(Mutex::new(FileDatabase::open(&db_path).unwrap()));
         let accounts = Arc::new(HashMap::new());
         let acl = Arc::new(acl(&[
@@ -759,15 +759,15 @@ fn info_record(homedir: &Path, input: &str) -> HashMap<String, String> {
 }
 
 fn spawn_pyzord_process(homedir: &Path, port: u16) -> Child {
-    Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .arg("--homedir")
         .arg(homedir)
         .arg("--password-file")
-        .arg("pyzord.passwd")
+        .arg("ruzord.passwd")
         .arg("--access-file")
-        .arg("pyzord.access")
+        .arg("ruzord.access")
         .arg("--dsn")
-        .arg(homedir.join("pyzord.db"))
+        .arg(homedir.join("ruzord.db"))
         .arg("-a")
         .arg("127.0.0.1")
         .arg("-p")
@@ -780,10 +780,10 @@ fn spawn_pyzord_process(homedir: &Path, port: u16) -> Child {
 }
 
 fn wait_for_process_server(server: &mut Child, address: &Address) {
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..50 {
-        if let Some(status) = server.try_wait().expect("poll pyzord process") {
-            panic!("pyzord exited before readiness: {status}");
+        if let Some(status) = server.try_wait().expect("poll ruzord process") {
+            panic!("ruzord exited before readiness: {status}");
         }
         if client
             .ping(address)
@@ -794,7 +794,7 @@ fn wait_for_process_server(server: &mut Child, address: &Address) {
         }
         thread::sleep(Duration::from_millis(50));
     }
-    panic!("pyzord did not become ready on {}:{}", address.0, address.1);
+    panic!("ruzord did not become ready on {}:{}", address.0, address.1);
 }
 
 fn stop_process(mut child: Child) {
@@ -803,7 +803,7 @@ fn stop_process(mut child: Child) {
 }
 
 fn run_pyzor(homedir: &std::path::Path, args: &[&str], input: &str) -> Output {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_pyzor"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_ruzor"))
         .arg("--homedir")
         .arg(homedir)
         .args(args)
@@ -811,7 +811,7 @@ fn run_pyzor(homedir: &std::path::Path, args: &[&str], input: &str) -> Output {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("spawn Rust pyzor client");
+        .expect("spawn Rust ruzor client");
     child
         .stdin
         .as_mut()

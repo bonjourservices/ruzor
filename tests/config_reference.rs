@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use pyzor::config::{
+use ruzor::config::{
     expand_homefile, load_access_file, load_local_whitelist, load_passwd_file, load_servers,
     read_ini_section,
 };
@@ -20,7 +20,7 @@ fn temp_dir(name: &str) -> PathBuf {
 #[test]
 fn passwd_loading_matches_reference_cases() {
     let dir = temp_dir("passwd");
-    let passwd = dir.join("pyzord.passwd");
+    let passwd = dir.join("ruzord.passwd");
 
     assert!(load_passwd_file(dir.join("missing")).is_empty());
 
@@ -43,7 +43,7 @@ fn passwd_loading_matches_reference_cases() {
 #[test]
 fn access_loading_matches_reference_rule_ordering() {
     let dir = temp_dir("access");
-    let access = dir.join("pyzord.access");
+    let access = dir.join("ruzord.access");
     let accounts = HashMap::from([
         ("alice".to_string(), "alice_key".to_string()),
         ("bob".to_string(), "bob_key".to_string()),
@@ -86,7 +86,7 @@ fn access_loading_matches_reference_rule_ordering() {
 #[test]
 fn access_loading_matches_reference_empty_and_multi_field_cases() {
     let dir = temp_dir("access-extra");
-    let access = dir.join("pyzord.access");
+    let access = dir.join("ruzord.access");
     let accounts = HashMap::from([
         ("alice".to_string(), "alice_key".to_string()),
         ("bob".to_string(), "bob_key".to_string()),

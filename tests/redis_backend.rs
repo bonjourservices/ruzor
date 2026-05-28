@@ -6,9 +6,9 @@ use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use pyzor::client::{BatchClient, Client};
+use ruzor::client::{BatchClient, Client};
 
-use pyzor::config::Address;
+use ruzor::config::Address;
 #[cfg(unix)]
 const SIGTERM: i32 = 15;
 
@@ -31,7 +31,7 @@ fn pyzord_uses_redis_v1_backend() {
     let mut server = PyzordProcess::start("redis-v1", "redis", &redis.dsn());
     wait_for_process_server(&mut server.child, &server.address);
 
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     assert!(client.report(DIGEST, &server.address).unwrap().is_ok());
     assert!(client.report(DIGEST, &server.address).unwrap().is_ok());
     assert!(client.whitelist(DIGEST, &server.address).unwrap().is_ok());
@@ -48,7 +48,7 @@ fn pyzord_redis_core_functional_mixin_matches_python() {
     let mut server = PyzordProcess::start("redis-core-functional", "redis", &redis.dsn());
     wait_for_process_server(&mut server.child, &server.address);
 
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     assert!(client.ping(&server.address).unwrap().is_ok());
 
     let pong = client.pong(PONG_DIGEST, &server.address).unwrap();
@@ -143,7 +143,7 @@ fn pyzord_uses_redis_v0_backend() {
     let mut server = PyzordProcess::start("redis-v0", "redis_v0", &redis.dsn());
     wait_for_process_server(&mut server.child, &server.address);
 
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     assert!(client.report(DIGEST, &server.address).unwrap().is_ok());
     assert!(client.whitelist(DIGEST, &server.address).unwrap().is_ok());
 
@@ -176,7 +176,7 @@ fn pyzord_redis_batched_functional_matrix_matches_python() {
     wait_for_process_server(&mut server1.child, &server1.address);
     wait_for_process_server(&mut server2.child, &server2.address);
 
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
 
     let report_digest = "da39a3ee5e6b4b0d3255bfef95601890afd80709";
     let mut batch = BatchClient::new(client.clone(), 10);
@@ -292,7 +292,7 @@ fn assert_redis_worker_mode(name: &str, extra_args: &[&str]) {
     let mut server = PyzordProcess::start_with_args(name, "redis", &redis.dsn(), extra_args);
     wait_for_process_server(&mut server.child, &server.address);
 
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..3 {
         assert!(client.report(DIGEST, &server.address).unwrap().is_ok());
     }
@@ -318,7 +318,7 @@ fn assert_digest_counts(client: &Client, address: &Address, digest: &str, expect
     panic!("digest {digest} at {address:?} had counts {last:?}, expected {expected:?}");
 }
 
-fn assert_message_counts(response: &pyzor::message::Message, expected: (i64, i64)) {
+fn assert_message_counts(response: &ruzor::message::Message, expected: (i64, i64)) {
     assert_eq!(
         (
             response.get("Count").unwrap().parse::<i64>().unwrap(),
@@ -329,7 +329,7 @@ fn assert_message_counts(response: &pyzor::message::Message, expected: (i64, i64
 }
 
 fn assert_distinct_info_timestamps(
-    response: &pyzor::message::Message,
+    response: &ruzor::message::Message,
     entered_key: &str,
     updated_key: &str,
 ) {
@@ -359,7 +359,7 @@ fn assert_cleanup_age_expires(name: &str, engine: &str) {
         PyzordProcess::start_with_args(name, engine, &redis.dsn(), &["--cleanup-age", "1"]);
     wait_for_process_server(&mut server.child, &server.address);
 
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     assert!(client.report(DIGEST, &server.address).unwrap().is_ok());
     let response = client.check(DIGEST, &server.address).unwrap();
     assert_eq!(response.get("Count"), Some("1"));
@@ -383,7 +383,7 @@ fn pyzord_redis_v1_cleanup_age_zero_keeps_records_like_python() {
     );
     wait_for_process_server(&mut server.child, &server.address);
 
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     assert!(client.report(DIGEST, &server.address).unwrap().is_ok());
     thread::sleep(Duration::from_secs(1));
     assert_digest_counts(&client, &server.address, DIGEST, (1, 0));
@@ -402,7 +402,7 @@ fn pyzord_prefork_uses_redis_backend_workers() {
     );
     wait_for_process_server(&mut server.child, &server.address);
 
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..6 {
         assert!(client.report(DIGEST, &server.address).unwrap().is_ok());
     }
@@ -428,7 +428,7 @@ impl PyzordProcess {
         std::fs::write(homedir.join("access"), "ALL : anonymous : allow\n").unwrap();
         std::fs::write(homedir.join("passwd"), "").unwrap();
         let port = free_udp_port();
-        let mut command = Command::new(env!("CARGO_BIN_EXE_pyzord"));
+        let mut command = Command::new(env!("CARGO_BIN_EXE_ruzord"));
         command
             .arg("--homedir")
             .arg(&homedir)
@@ -448,7 +448,7 @@ impl PyzordProcess {
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null());
-        let child = command.spawn().expect("spawn pyzord with Redis backend");
+        let child = command.spawn().expect("spawn ruzord with Redis backend");
         Self {
             child,
             address: ("127.0.0.1".to_string(), port),
@@ -546,10 +546,10 @@ impl Drop for RedisContainer {
 }
 
 fn wait_for_process_server(server: &mut Child, address: &Address) {
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..100 {
-        if let Some(status) = server.try_wait().expect("poll pyzord") {
-            panic!("pyzord exited before readiness: {status}");
+        if let Some(status) = server.try_wait().expect("poll ruzord") {
+            panic!("ruzord exited before readiness: {status}");
         }
         if client
             .ping(address)
@@ -560,7 +560,7 @@ fn wait_for_process_server(server: &mut Child, address: &Address) {
         }
         thread::sleep(Duration::from_millis(50));
     }
-    panic!("pyzord did not become ready on {}:{}", address.0, address.1);
+    panic!("ruzord did not become ready on {}:{}", address.0, address.1);
 }
 
 fn wait_for_redis(port: u16) {
@@ -588,7 +588,7 @@ fn terminate(child: &mut Child) {
     {
         let _ = unsafe { kill(child.id() as i32, SIGTERM) };
         for _ in 0..50 {
-            if child.try_wait().expect("poll pyzord exit").is_some() {
+            if child.try_wait().expect("poll ruzord exit").is_some() {
                 return;
             }
             thread::sleep(Duration::from_millis(50));

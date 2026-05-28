@@ -1,17 +1,17 @@
 [package]
-name = "pyzor"
+name = "ruzor"
 version = "0.1.0"
 edition = "2024"
 authors = ["Bonjour Services"]
 rust-version = "1.95"
-description = "1:1-compatible Rust implementation of the Pyzor UDP client and server"
+description = "Ruzor, a 1:1-compatible Rust port of the Pyzor UDP client and server"
 readme = "README.md"
-documentation = "https://docs.rs/pyzor"
-homepage = "https://github.com/bonjourservices/pyzor"
-repository = "https://github.com/bonjourservices/pyzor"
+documentation = "https://docs.rs/ruzor"
+homepage = "https://github.com/bonjourservices/ruzor"
+repository = "https://github.com/bonjourservices/ruzor"
 
-license = "MIT"
-keywords = ["pyzor", "spam", "email", "udp", "cli"]
+license = "GPL-3.0-only"
+keywords = ["ruzor", "pyzor", "spam", "email", "udp"]
 categories = ["command-line-utilities", "email", "network-programming"]
 include = [
     "build.rs",
@@ -30,16 +30,16 @@ libc = { version = "0.2", optional = true }
 mysql = { version = "28.0.0", default-features = false, features = ["minimal"], optional = true }
 
 [lib]
-name = "pyzor"
+name = "ruzor"
 path = "src/lib.rs"
 
 [[bin]]
-name = "pyzor"
-path = "src/bin/pyzor.rs"
+name = "ruzor"
+path = "src/bin/ruzor.rs"
 
 [[bin]]
-name = "pyzord"
-path = "src/bin/pyzord.rs"
+name = "ruzord"
+path = "src/bin/ruzord.rs"
 
 [features]
 default = ["backend-gdbm", "backend-redis", "backend-mysql"]

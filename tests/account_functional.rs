@@ -8,10 +8,10 @@ use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use pyzor::client::Client;
-use pyzor::config::Address;
-use pyzor::engines::FileDatabase;
-use pyzor::serve_socket_until_shutdown;
+use ruzor::client::Client;
+use ruzor::config::Address;
+use ruzor::engines::FileDatabase;
+use ruzor::serve_socket_until_shutdown;
 
 const MSG: &str = "Newsgroups:
 Date: Wed, 10 Apr 2002 22:23:51 -0400 (EDT)
@@ -74,8 +74,8 @@ fn cli_account_auth_matrix_matches_python_functional_process_test() {
     let homedir = temp_dir("account-functional-process-home");
     let port = free_udp_port();
     write_common_homedir(&homedir, port);
-    std::fs::write(homedir.join("pyzord.passwd"), reference_passwd_file()).unwrap();
-    std::fs::write(homedir.join("pyzord.access"), reference_access_file()).unwrap();
+    std::fs::write(homedir.join("ruzord.passwd"), reference_passwd_file()).unwrap();
+    std::fs::write(homedir.join("ruzord.access"), reference_access_file()).unwrap();
     let mut server = spawn_pyzord_process(&homedir, port);
     let address: Address = ("127.0.0.1".to_string(), port);
     wait_for_process_server(&mut server, &address);
@@ -161,7 +161,7 @@ fn cli_default_anonymous_access_matches_python_functional_process_test() {
 struct TestServer {
     port: u16,
     shutdown: Arc<AtomicBool>,
-    handle: Option<JoinHandle<pyzor::Result<()>>>,
+    handle: Option<JoinHandle<ruzor::Result<()>>>,
     db_path: PathBuf,
 }
 
@@ -173,7 +173,7 @@ impl TestServer {
     ) -> Self {
         let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
         let port = socket.local_addr().unwrap().port();
-        let db_path = temp_dir(name).join("pyzord.db");
+        let db_path = temp_dir(name).join("ruzord.db");
         let db = Arc::new(Mutex::new(FileDatabase::open(&db_path).unwrap()));
         let accounts = Arc::new(accounts);
         let acl = Arc::new(acl);
@@ -239,7 +239,7 @@ fn success_for(command: &str, success: bool) -> Option<bool> {
 }
 
 fn run_pyzor(homedir: &Path, args: &[&str], input: &str) -> Output {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_pyzor"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_ruzor"))
         .arg("--homedir")
         .arg(homedir)
         .args(args)
@@ -247,7 +247,7 @@ fn run_pyzor(homedir: &Path, args: &[&str], input: &str) -> Output {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("spawn Rust pyzor client");
+        .expect("spawn Rust ruzor client");
     child
         .stdin
         .as_mut()
@@ -272,15 +272,15 @@ fn assert_status_code(output: &Output, expected_code: i64) {
 }
 
 fn spawn_pyzord_process(homedir: &Path, port: u16) -> Child {
-    Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .arg("--homedir")
         .arg(homedir)
         .arg("--password-file")
-        .arg("pyzord.passwd")
+        .arg("ruzord.passwd")
         .arg("--access-file")
-        .arg("pyzord.access")
+        .arg("ruzord.access")
         .arg("--dsn")
-        .arg(homedir.join("pyzord.db"))
+        .arg(homedir.join("ruzord.db"))
         .arg("-a")
         .arg("127.0.0.1")
         .arg("-p")
@@ -293,17 +293,17 @@ fn spawn_pyzord_process(homedir: &Path, port: u16) -> Child {
 }
 
 fn wait_for_process_server(server: &mut Child, address: &Address) {
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..50 {
-        if let Some(status) = server.try_wait().expect("poll pyzord process") {
-            panic!("pyzord exited before readiness: {status}");
+        if let Some(status) = server.try_wait().expect("poll ruzord process") {
+            panic!("ruzord exited before readiness: {status}");
         }
         if client.ping(address).is_ok() {
             return;
         }
         thread::sleep(Duration::from_millis(50));
     }
-    panic!("pyzord did not become ready on {}:{}", address.0, address.1);
+    panic!("ruzord did not become ready on {}:{}", address.0, address.1);
 }
 
 fn stop_process(mut child: Child) {

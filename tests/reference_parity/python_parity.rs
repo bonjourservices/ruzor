@@ -3,7 +3,7 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 
-use pyzor::engines::{DigestDatabase, Record};
+use ruzor::engines::{DigestDatabase, Record};
 
 static PANIC_HOOK_LOCK: Mutex<()> = Mutex::new(());
 
@@ -24,7 +24,7 @@ Test Email
 #[ignore = "requires the bundled Python reference implementation"]
 fn digest_matches_python_reference_message() {
     let python = python_digest(REFERENCE_MSG.as_bytes());
-    let rust = pyzor::digest::digest_message(REFERENCE_MSG.as_bytes());
+    let rust = ruzor::digest::digest_message(REFERENCE_MSG.as_bytes());
     assert_eq!(rust, python);
     assert_eq!(rust, "7421216f915a87e02da034cc483f5c876e1a1338");
 }
@@ -33,7 +33,7 @@ fn digest_matches_python_reference_message() {
 #[ignore = "requires the bundled Python reference implementation"]
 fn predigest_matches_python_reference_message() {
     let python = python_predigest(REFERENCE_MSG.as_bytes());
-    let rust = pyzor::digest::predigest_message(REFERENCE_MSG.as_bytes()).join("\n");
+    let rust = ruzor::digest::predigest_message(REFERENCE_MSG.as_bytes()).join("\n");
     assert_eq!(rust, python);
     assert_eq!(rust, "TestEmail");
 }
@@ -51,7 +51,7 @@ fn digest_corpus_matches_python() {
         b"Content-Type: text/plain; charset=quopri\n\nThis=20line=20decoded".as_slice(),
     ];
     for sample in samples {
-        assert_eq!(pyzor::digest::digest_message(sample), python_digest(sample));
+        assert_eq!(ruzor::digest::digest_message(sample), python_digest(sample));
     }
 }
 
@@ -76,7 +76,7 @@ print(sign_msg(hashed_key, timestamp, msg))
 "#,
         b"",
     );
-    let mut msg = pyzor::message::Message::new();
+    let mut msg = ruzor::message::Message::new();
     msg.add_header("Op", "ping");
     msg.add_header("Thread", "14941");
     msg.add_header("PV", "2.1");
@@ -84,8 +84,8 @@ print(sign_msg(hashed_key, timestamp, msg))
     msg.add_header("Time", "1381219396");
     let rust = format!(
         "{}\n{}",
-        pyzor::account::hash_key("testkey", "testuser"),
-        pyzor::account::sign_msg("00942f4668670f34c5943cf52c7ef3139fe2b8d6", 1381219396, &msg)
+        ruzor::account::hash_key("testkey", "testuser"),
+        ruzor::account::sign_msg("00942f4668670f34c5943cf52c7ef3139fe2b8d6", 1381219396, &msg)
     );
     assert_eq!(rust, python);
 }
@@ -160,7 +160,7 @@ finally:
         let _hook_guard = PANIC_HOOK_LOCK.lock().unwrap();
         let hook = std::panic::take_hook();
         std::panic::set_hook(Box::new(|_| {}));
-        let response = pyzor::server::handle_packet(packet.as_bytes(), &db, &accounts, &acl);
+        let response = ruzor::server::handle_packet(packet.as_bytes(), &db, &accounts, &acl);
         std::panic::set_hook(hook);
         response
     };
@@ -184,7 +184,7 @@ fn server_digest_operations_without_op_digest_match_python_handler_response() {
     for (op, thread) in [("pong", 4300), ("check", 4301), ("info", 4302)] {
         let packet = format!("Op: {op}\nThread: {thread}\nPV: 2.1\nUser: anonymous\n\n");
         let python = python_server_response(packet.as_bytes());
-        let rust = pyzor::server::handle_packet(packet.as_bytes(), &db, &accounts, &acl);
+        let rust = ruzor::server::handle_packet(packet.as_bytes(), &db, &accounts, &acl);
 
         assert_eq!(normalize_response(&rust.as_string()), python, "op {op}");
         assert_eq!(rust.get("Count"), None, "op {op}");
@@ -199,11 +199,11 @@ fn server_digest_operations_without_op_digest_match_python_handler_response() {
 struct EmptyDatabase;
 
 impl DigestDatabase for EmptyDatabase {
-    fn get(&mut self, _digest: &str) -> pyzor::Result<Record> {
+    fn get(&mut self, _digest: &str) -> ruzor::Result<Record> {
         Ok(Record::default())
     }
 
-    fn set(&mut self, _digest: &str, _record: Record) -> pyzor::Result<()> {
+    fn set(&mut self, _digest: &str, _record: Record) -> ruzor::Result<()> {
         Ok(())
     }
 }
@@ -211,11 +211,11 @@ impl DigestDatabase for EmptyDatabase {
 struct PanickingDatabase;
 
 impl DigestDatabase for PanickingDatabase {
-    fn get(&mut self, _digest: &str) -> pyzor::Result<Record> {
+    fn get(&mut self, _digest: &str) -> ruzor::Result<Record> {
         panic!("test")
     }
 
-    fn set(&mut self, _digest: &str, _record: Record) -> pyzor::Result<()> {
+    fn set(&mut self, _digest: &str, _record: Record) -> ruzor::Result<()> {
         panic!("test")
     }
 }

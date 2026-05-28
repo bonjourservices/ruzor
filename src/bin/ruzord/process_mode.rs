@@ -29,8 +29,8 @@ pub(super) fn supports_processes(engine: &str) -> bool {
 #[cfg(unix)]
 pub(super) fn run_process_server(
     config: &ServerConfig,
-    logger: Option<pyzor::logging::Logger>,
-    usage_logger: Option<pyzor::logging::Logger>,
+    logger: Option<ruzor::logging::Logger>,
+    usage_logger: Option<ruzor::logging::Logger>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let forwarding = if config.forward_client_homedir.is_empty() {
         None
@@ -43,7 +43,7 @@ pub(super) fn run_process_server(
     let socket = UdpSocket::bind((config.address.as_str(), config.port))?;
     socket.set_read_timeout(Some(Duration::from_millis(100)))?;
     let mut auth = load_auth(config, logger.as_ref());
-    drop(pyzor::server::open_database(
+    drop(ruzor::server::open_database(
         &config.engine,
         &config.digest_db,
         config.cleanup_age,
@@ -61,7 +61,7 @@ pub(super) fn run_process_server(
         }
         reap_exited_children(&mut pids);
 
-        let mut buf = [0u8; pyzor::MAX_PACKET_SIZE];
+        let mut buf = [0u8; ruzor::MAX_PACKET_SIZE];
         let (len, peer) = match socket.recv_from(&mut buf) {
             Ok(received) => received,
             Err(error)
@@ -93,11 +93,11 @@ pub(super) fn run_process_server(
             }
             0 => {
                 let forwarded = forwarded_request(&packet);
-                let db = match pyzor::server::open_database(&engine, &database_path, None) {
+                let db = match ruzor::server::open_database(&engine, &database_path, None) {
                     Ok(db) => Arc::new(Mutex::new(db)),
                     Err(error) => {
                         let response = database_open_error_response(&packet, error);
-                        pyzor::server::log_usage_for_response(
+                        ruzor::server::log_usage_for_response(
                             &packet,
                             &peer.ip().to_string(),
                             &response,
@@ -107,9 +107,9 @@ pub(super) fn run_process_server(
                         process::exit(0);
                     }
                 };
-                let response = pyzor::server::handle_packet(&packet, &db, &accounts, &acl);
+                let response = ruzor::server::handle_packet(&packet, &db, &accounts, &acl);
                 let response_ok = response.is_ok();
-                pyzor::server::log_usage_for_response(
+                ruzor::server::log_usage_for_response(
                     &packet,
                     &peer.ip().to_string(),
                     &response,
@@ -130,11 +130,11 @@ pub(super) fn run_process_server(
 #[cfg(unix)]
 fn database_open_error_response(
     packet: &[u8],
-    error: pyzor::error::PyzorError,
-) -> pyzor::message::Message {
+    error: ruzor::error::PyzorError,
+) -> ruzor::message::Message {
     let cleaned = clean_legacy_packet(packet);
-    let request = pyzor::message::Message::parse(&cleaned);
-    let mut response = pyzor::message::response(request.get("Thread"));
+    let request = ruzor::message::Message::parse(&cleaned);
+    let mut response = ruzor::message::response(request.get("Thread"));
     response.replace_header("Code", "500");
     response.replace_header("Diag", format!("Internal Server Error: {error}"));
     response
@@ -148,9 +148,9 @@ struct AuthSnapshot {
 }
 
 #[cfg(unix)]
-fn load_auth(config: &ServerConfig, logger: Option<&pyzor::logging::Logger>) -> AuthSnapshot {
-    let accounts = pyzor::config::load_passwd_file_with_logger(&config.passwd_file, logger);
-    let acl = pyzor::config::load_access_file_with_logger(&config.access_file, &accounts, logger);
+fn load_auth(config: &ServerConfig, logger: Option<&ruzor::logging::Logger>) -> AuthSnapshot {
+    let accounts = ruzor::config::load_passwd_file_with_logger(&config.passwd_file, logger);
+    let acl = ruzor::config::load_access_file_with_logger(&config.access_file, &accounts, logger);
     AuthSnapshot { accounts, acl }
 }
 
@@ -178,7 +178,7 @@ struct ForwardedRequest {
 #[cfg(unix)]
 fn forwarded_request(packet: &[u8]) -> Option<ForwardedRequest> {
     let cleaned = clean_legacy_packet(packet);
-    let request = pyzor::message::Message::parse(&cleaned);
+    let request = ruzor::message::Message::parse(&cleaned);
     let whitelist = match request.get("Op")? {
         "report" => false,
         "whitelist" => true,
@@ -221,7 +221,7 @@ fn forward_process_request(
     let (Some(forwarding), Some(request)) = (forwarding, request) else {
         return;
     };
-    let mut client = pyzor::client::BatchClient::new(forwarding.client.clone(), 10);
+    let mut client = ruzor::client::BatchClient::new(forwarding.client.clone(), 10);
     for digest in &request.digests {
         for server in &forwarding.servers {
             let result = if request.whitelist {

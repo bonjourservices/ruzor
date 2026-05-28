@@ -5,8 +5,8 @@ use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use pyzor::client::Client;
-use pyzor::config::Address;
+use ruzor::client::Client;
+use ruzor::config::Address;
 
 #[test]
 #[ignore = "requires the bundled Python reference implementation"]
@@ -35,7 +35,7 @@ fn rust_client_talks_to_python_server_process() {
 
     wait_for_python_server(&mut server, &address);
 
-    let client = Client::new(HashMap::new(), Some(2), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(2), ruzor::digest::DIGEST_SPEC.to_vec());
     assert!(client.report(digest, &address).unwrap().is_ok());
     let response = client.check(digest, &address).unwrap();
     assert_eq!(response.get("Count"), Some("1"));
@@ -62,7 +62,7 @@ server.serve_forever()
 "#;
 
 fn wait_for_python_server(server: &mut Child, address: &Address) {
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..50 {
         if let Some(status) = server.try_wait().expect("poll Python pyzord") {
             panic!("Python pyzord exited before readiness: {status}");

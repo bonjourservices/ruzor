@@ -21,13 +21,13 @@ jobs:
       matrix:
         include:
           - os: ubuntu-24.04
-            artifact: pyzor-linux-x86_64
+            artifact: ruzor-linux-x86_64
             deps: sudo apt-get update && sudo apt-get install -y libgdbm-dev pkg-config
           - os: macos-15
-            artifact: pyzor-macos-arm64
+            artifact: ruzor-macos-arm64
             deps: brew install gdbm pkg-config
           - os: macos-15-intel
-            artifact: pyzor-macos-x86_64
+            artifact: ruzor-macos-x86_64
             deps: brew install gdbm pkg-config
 
     steps:
@@ -51,8 +51,8 @@ jobs:
       - name: Create release archive
         run: |
           mkdir -p dist/${{ matrix.artifact }}
-          cp target/release/pyzor dist/${{ matrix.artifact }}/
-          cp target/release/pyzord dist/${{ matrix.artifact }}/
+          cp target/release/ruzor dist/${{ matrix.artifact }}/
+          cp target/release/ruzord dist/${{ matrix.artifact }}/
           cp README.md LICENSE dist/${{ matrix.artifact }}/
           tar -czf dist/${{ matrix.artifact }}.tar.gz -C dist ${{ matrix.artifact }}
 

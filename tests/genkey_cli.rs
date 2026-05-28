@@ -40,7 +40,7 @@ fn genkey_rejects_mismatched_confirmation() {
 }
 
 fn run_pyzor_genkey(homedir: &std::path::Path, input: &str) -> Output {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_pyzor"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_ruzor"))
         .arg("--homedir")
         .arg(homedir)
         .arg("genkey")

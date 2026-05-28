@@ -4,10 +4,10 @@ use std::sync::mpsc::{self, Receiver};
 use std::thread;
 use std::time::Duration;
 
-use pyzor::client::{BatchClient, Client};
-use pyzor::config::Address;
-use pyzor::forwarder::ForwarderHandle;
-use pyzor::message::Message;
+use ruzor::client::{BatchClient, Client};
+use ruzor::config::Address;
+use ruzor::forwarder::ForwarderHandle;
+use ruzor::message::Message;
 
 const DIGEST: &str = "975422c090e7a43ab7c9bf0065d5b661259e6d74";
 
@@ -15,7 +15,7 @@ const DIGEST: &str = "975422c090e7a43ab7c9bf0065d5b661259e6d74";
 fn forwarder_sends_report_and_whitelist_to_all_remote_servers() {
     let remote1 = UdpCollector::start();
     let remote2 = UdpCollector::start();
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     let batch = BatchClient::new(client, 10);
     let mut handle = ForwarderHandle::start(batch, vec![remote1.address(), remote2.address()], 10);
     let forwarder = handle.forwarder();
@@ -30,7 +30,7 @@ fn forwarder_sends_report_and_whitelist_to_all_remote_servers() {
 
 #[test]
 fn forwarder_queue_overload_does_not_block_or_panic() {
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     let batch = BatchClient::new(client, 10);
     let mut handle = ForwarderHandle::start(batch, Vec::new(), 10);
     let forwarder = handle.forwarder();
@@ -56,7 +56,7 @@ impl UdpCollector {
         let (tx, rx) = mpsc::channel();
         thread::spawn(move || {
             for _ in 0..2 {
-                let mut buf = [0u8; pyzor::MAX_PACKET_SIZE];
+                let mut buf = [0u8; ruzor::MAX_PACKET_SIZE];
                 let (len, _peer) = socket.recv_from(&mut buf).unwrap();
                 tx.send(Message::parse(&buf[..len])).unwrap();
             }

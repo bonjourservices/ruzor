@@ -8,10 +8,10 @@ use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use pyzor::client::Client;
-use pyzor::config::Address;
-use pyzor::engines::FileDatabase;
-use pyzor::serve_socket_until_shutdown;
+use ruzor::client::Client;
+use ruzor::config::Address;
+use ruzor::engines::FileDatabase;
+use ruzor::serve_socket_until_shutdown;
 
 const MSG: &str = "This is a test message for the forwading feature";
 
@@ -68,7 +68,7 @@ fn cli_forward_report_workflow_matches_python_functional_test() {
 }
 
 fn spawn_forwarding_pyzord(homedir: &Path, forward_homedir: &Path, port: u16) -> Child {
-    Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .arg("--homedir")
         .arg(homedir)
         .arg("--password-file")
@@ -76,7 +76,7 @@ fn spawn_forwarding_pyzord(homedir: &Path, forward_homedir: &Path, port: u16) ->
         .arg("--access-file")
         .arg("access")
         .arg("--dsn")
-        .arg(homedir.join("pyzord.db"))
+        .arg(homedir.join("ruzord.db"))
         .arg("--forward-client-homedir")
         .arg(forward_homedir)
         .arg("-a")
@@ -91,10 +91,10 @@ fn spawn_forwarding_pyzord(homedir: &Path, forward_homedir: &Path, port: u16) ->
 }
 
 fn wait_for_process_server(server: &mut Child, address: &Address) {
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..100 {
-        if let Some(status) = server.try_wait().expect("poll pyzord") {
-            panic!("pyzord exited before readiness: {status}");
+        if let Some(status) = server.try_wait().expect("poll ruzord") {
+            panic!("ruzord exited before readiness: {status}");
         }
         if client
             .ping(address)
@@ -105,7 +105,7 @@ fn wait_for_process_server(server: &mut Child, address: &Address) {
         }
         thread::sleep(Duration::from_millis(50));
     }
-    panic!("pyzord did not become ready on {}:{}", address.0, address.1);
+    panic!("ruzord did not become ready on {}:{}", address.0, address.1);
 }
 
 fn wait_for_cli_counts(homedir: &Path, expected: (i64, i64)) {
@@ -130,7 +130,7 @@ fn assert_cli_counts(homedir: &Path, command: &str, expected: (i64, i64)) {
 }
 
 fn run_pyzor(homedir: &Path, args: &[&str], input: &str) -> Output {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_pyzor"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_ruzor"))
         .arg("--homedir")
         .arg(homedir)
         .args(args)
@@ -138,7 +138,7 @@ fn run_pyzor(homedir: &Path, args: &[&str], input: &str) -> Output {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("spawn Rust pyzor client");
+        .expect("spawn Rust ruzor client");
     child
         .stdin
         .as_mut()
@@ -185,7 +185,7 @@ fn terminate(child: &mut Child) {
         let _ = child.kill();
     }
     for _ in 0..50 {
-        if child.try_wait().expect("poll pyzord exit").is_some() {
+        if child.try_wait().expect("poll ruzord exit").is_some() {
             return;
         }
         thread::sleep(Duration::from_millis(50));
@@ -197,7 +197,7 @@ fn terminate(child: &mut Child) {
 struct TestServer {
     port: u16,
     shutdown: Arc<AtomicBool>,
-    handle: Option<JoinHandle<pyzor::Result<()>>>,
+    handle: Option<JoinHandle<ruzor::Result<()>>>,
     db_path: PathBuf,
 }
 
@@ -205,7 +205,7 @@ impl TestServer {
     fn start(name: &str) -> Self {
         let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
         let port = socket.local_addr().unwrap().port();
-        let db_path = temp_dir(name).join("pyzord.db");
+        let db_path = temp_dir(name).join("ruzord.db");
         let db = Arc::new(Mutex::new(FileDatabase::open(&db_path).unwrap()));
         let accounts = Arc::new(HashMap::new());
         let acl = Arc::new(acl(&[

@@ -6,10 +6,10 @@ use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use pyzor::client::{BatchClient, Client};
-use pyzor::config::Address;
-use pyzor::engines::FileDatabase;
-use pyzor::serve_socket_until_shutdown;
+use ruzor::client::{BatchClient, Client};
+use ruzor::config::Address;
+use ruzor::engines::FileDatabase;
+use ruzor::serve_socket_until_shutdown;
 
 #[test]
 fn batched_report_matches_python_functional_test() {
@@ -162,7 +162,7 @@ fn batched_whitelist_to_multiple_addresses_matches_python_functional_test() {
 struct TestServer {
     address: Address,
     shutdown: Arc<AtomicBool>,
-    handle: Option<JoinHandle<pyzor::Result<()>>>,
+    handle: Option<JoinHandle<ruzor::Result<()>>>,
     db_path: PathBuf,
 }
 
@@ -170,7 +170,7 @@ impl TestServer {
     fn start(name: &str) -> Self {
         let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
         let port = socket.local_addr().unwrap().port();
-        let db_path = temp_dir(name).join("pyzord.db");
+        let db_path = temp_dir(name).join("ruzord.db");
         let db = Arc::new(Mutex::new(FileDatabase::open(&db_path).unwrap()));
         let accounts = Arc::new(HashMap::new());
         let acl = Arc::new(acl(&["report", "check", "whitelist"]));
@@ -228,7 +228,7 @@ fn assert_digest_counts(client: &Client, address: &Address, digest: &str, expect
 }
 
 fn test_client() -> Client {
-    Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec())
+    Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec())
 }
 
 fn numbered_digests(suffix: &str) -> Vec<String> {

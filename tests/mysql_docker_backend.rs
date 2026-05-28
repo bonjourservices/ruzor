@@ -12,9 +12,9 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use mysql::OptsBuilder;
 use mysql::prelude::Queryable;
-use pyzor::client::{BatchClient, Client};
-use pyzor::config::Address;
-use pyzor::mysql_engine::MySqlDsn;
+use ruzor::client::{BatchClient, Client};
+use ruzor::config::Address;
+use ruzor::mysql_engine::MySqlDsn;
 
 const DIGEST: &str = "7421216f915a87e02da034cc483f5c876e1a1338";
 const PONG_DIGEST: &str = "0000000000000000000000000000000000000101";
@@ -442,7 +442,7 @@ fn mysql_test_guard() -> MutexGuard<'static, ()> {
 }
 
 fn test_client() -> Client {
-    Client::new(HashMap::new(), Some(5), pyzor::digest::DIGEST_SPEC.to_vec())
+    Client::new(HashMap::new(), Some(5), ruzor::digest::DIGEST_SPEC.to_vec())
 }
 
 fn send_parallel_reports(address: Address, count: usize, whitelist: bool) {
@@ -465,7 +465,7 @@ fn send_parallel_reports(address: Address, count: usize, whitelist: bool) {
     }
 }
 
-fn assert_message_counts(response: &pyzor::message::Message, expected: (i64, i64)) {
+fn assert_message_counts(response: &ruzor::message::Message, expected: (i64, i64)) {
     assert_eq!(
         (
             response.get("Count").unwrap().parse::<i64>().unwrap(),
@@ -476,7 +476,7 @@ fn assert_message_counts(response: &pyzor::message::Message, expected: (i64, i64
 }
 
 fn assert_distinct_info_timestamps(
-    response: &pyzor::message::Message,
+    response: &ruzor::message::Message,
     entered_key: &str,
     updated_key: &str,
 ) {
@@ -725,7 +725,7 @@ impl PyzordProcess {
         std::fs::write(homedir.join("access"), "ALL : anonymous : allow\n").unwrap();
         std::fs::write(homedir.join("passwd"), "").unwrap();
         let port = free_udp_port();
-        let mut command = Command::new(env!("CARGO_BIN_EXE_pyzord"));
+        let mut command = Command::new(env!("CARGO_BIN_EXE_ruzord"));
         command
             .arg("--homedir")
             .arg(&homedir)
@@ -745,7 +745,7 @@ impl PyzordProcess {
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::piped());
-        let child = command.spawn().expect("spawn pyzord with MySQL backend");
+        let child = command.spawn().expect("spawn ruzord with MySQL backend");
         Self {
             child,
             address: ("127.0.0.1".to_string(), port),
@@ -764,12 +764,12 @@ impl Drop for PyzordProcess {
 fn wait_for_process_server(server: &mut Child, address: &Address) {
     let client = test_client();
     for _ in 0..100 {
-        if let Some(status) = server.try_wait().expect("poll pyzord") {
+        if let Some(status) = server.try_wait().expect("poll ruzord") {
             let mut stderr = String::new();
             if let Some(mut pipe) = server.stderr.take() {
                 let _ = pipe.read_to_string(&mut stderr);
             }
-            panic!("pyzord exited before readiness: {status}\n{stderr}");
+            panic!("ruzord exited before readiness: {status}\n{stderr}");
         }
         if client
             .ping(address)
@@ -780,7 +780,7 @@ fn wait_for_process_server(server: &mut Child, address: &Address) {
         }
         thread::sleep(Duration::from_millis(50));
     }
-    panic!("pyzord did not become ready on {}:{}", address.0, address.1);
+    panic!("ruzord did not become ready on {}:{}", address.0, address.1);
 }
 
 fn terminate(child: &mut Child) {
@@ -788,7 +788,7 @@ fn terminate(child: &mut Child) {
     {
         let _ = unsafe { kill(child.id() as i32, SIGTERM) };
         for _ in 0..50 {
-            if child.try_wait().expect("poll pyzord exit").is_some() {
+            if child.try_wait().expect("poll ruzord exit").is_some() {
                 return;
             }
             thread::sleep(Duration::from_millis(50));

@@ -10,9 +10,9 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use mysql::OptsBuilder;
 use mysql::prelude::Queryable;
-use pyzor::client::Client;
-use pyzor::config::Address;
-use pyzor::mysql_engine::MySqlDsn;
+use ruzor::client::Client;
+use ruzor::config::Address;
+use ruzor::mysql_engine::MySqlDsn;
 
 const DIGEST: &str = "7421216f915a87e02da034cc483f5c876e1a1338";
 
@@ -29,7 +29,7 @@ fn pyzord_uses_mysql_backend() {
     let mut server = PyzordProcess::start("mysql", &dsn_value);
     wait_for_process_server(&mut server.child, &server.address);
 
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     assert!(client.report(DIGEST, &server.address).unwrap().is_ok());
     assert!(client.report(DIGEST, &server.address).unwrap().is_ok());
     assert!(client.whitelist(DIGEST, &server.address).unwrap().is_ok());
@@ -101,7 +101,7 @@ impl PyzordProcess {
         std::fs::write(homedir.join("access"), "ALL : anonymous : allow\n").unwrap();
         std::fs::write(homedir.join("passwd"), "").unwrap();
         let port = free_udp_port();
-        let mut command = Command::new(env!("CARGO_BIN_EXE_pyzord"));
+        let mut command = Command::new(env!("CARGO_BIN_EXE_ruzord"));
         command
             .arg("--homedir")
             .arg(&homedir)
@@ -120,7 +120,7 @@ impl PyzordProcess {
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null());
-        let child = command.spawn().expect("spawn pyzord with MySQL backend");
+        let child = command.spawn().expect("spawn ruzord with MySQL backend");
         Self {
             child,
             address: ("127.0.0.1".to_string(), port),
@@ -138,10 +138,10 @@ impl Drop for PyzordProcess {
 }
 
 fn wait_for_process_server(server: &mut Child, address: &Address) {
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..100 {
-        if let Some(status) = server.try_wait().expect("poll pyzord") {
-            panic!("pyzord exited before readiness: {status}");
+        if let Some(status) = server.try_wait().expect("poll ruzord") {
+            panic!("ruzord exited before readiness: {status}");
         }
         if client
             .ping(address)
@@ -152,7 +152,7 @@ fn wait_for_process_server(server: &mut Child, address: &Address) {
         }
         thread::sleep(Duration::from_millis(50));
     }
-    panic!("pyzord did not become ready on {}:{}", address.0, address.1);
+    panic!("ruzord did not become ready on {}:{}", address.0, address.1);
 }
 
 fn free_udp_port() -> u16 {

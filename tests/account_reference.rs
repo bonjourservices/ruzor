@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use pyzor::account::{hash_key, key_from_hexstr, sign_for_account, sign_msg, verify_signature};
-use pyzor::config::load_accounts;
-use pyzor::error::PyzorError;
-use pyzor::message::Message;
+use ruzor::account::{hash_key, key_from_hexstr, sign_for_account, sign_msg, verify_signature};
+use ruzor::config::load_accounts;
+use ruzor::error::PyzorError;
+use ruzor::message::Message;
 
 fn temp_dir(name: &str) -> PathBuf {
     let nanos = SystemTime::now()
@@ -44,8 +44,8 @@ fn verify_signature_matches_reference_success_and_failures() {
     msg.add_header("PV", "2.1");
     sign_for_account(
         &mut msg,
-        &pyzor::account::Account::new("testuser", None, "testkey"),
-        pyzor::account::now_timestamp(),
+        &ruzor::account::Account::new("testuser", None, "testkey"),
+        ruzor::account::now_timestamp(),
     );
     assert!(verify_signature(&msg, "testkey").is_ok());
 
@@ -55,7 +55,7 @@ fn verify_signature_matches_reference_success_and_failures() {
     old.add_header("PV", "2.1");
     sign_for_account(
         &mut old,
-        &pyzor::account::Account::new("testuser", None, "testkey"),
+        &ruzor::account::Account::new("testuser", None, "testkey"),
         1_381_219_396,
     );
     assert!(

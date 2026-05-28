@@ -7,8 +7,8 @@ use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use pyzor::client::Client;
-use pyzor::config::Address;
+use ruzor::client::Client;
+use ruzor::config::Address;
 
 const DIGEST: &str = "7421216f915a87e02da034cc483f5c876e1a1338";
 const SIGTERM: i32 = 15;
@@ -28,12 +28,12 @@ fn sigusr1_reloads_access_file() {
     std::fs::write(&access, "check report ping pong info : anonymous : allow\n").unwrap();
     std::fs::write(homedir.join("passwd"), "").unwrap();
     let port = free_udp_port();
-    let db_path = homedir.join("pyzord.db");
+    let db_path = homedir.join("ruzord.db");
     let address: Address = ("127.0.0.1".to_string(), port);
     let mut server = spawn_server(&homedir, &access, &db_path, port, false);
     wait_for_server(&mut server, &address);
 
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     let denied = client.whitelist(DIGEST, &address).unwrap();
     assert_eq!(denied.get("Code"), Some("403"));
 
@@ -52,9 +52,9 @@ fn sigterm_shuts_down_and_removes_detach_pidfile() {
     std::fs::write(&access, "ALL : anonymous : allow\n").unwrap();
     std::fs::write(homedir.join("passwd"), "").unwrap();
     let port = free_udp_port();
-    let db_path = homedir.join("pyzord.db");
-    let pidfile = homedir.join("pyzord.pid");
-    let log_path = homedir.join("pyzord.log");
+    let db_path = homedir.join("ruzord.db");
+    let pidfile = homedir.join("ruzord.pid");
+    let log_path = homedir.join("ruzord.log");
     let address: Address = ("127.0.0.1".to_string(), port);
     let mut launcher = spawn_server(&homedir, &access, &db_path, port, true);
     let launcher_pid = launcher.id();
@@ -73,7 +73,7 @@ fn sigterm_shuts_down_and_removes_detach_pidfile() {
 }
 
 fn spawn_server(homedir: &Path, access: &Path, db_path: &Path, port: u16, detach: bool) -> Child {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_pyzord"));
+    let mut command = Command::new(env!("CARGO_BIN_EXE_ruzord"));
     command
         .arg("--homedir")
         .arg(homedir)
@@ -91,16 +91,16 @@ fn spawn_server(homedir: &Path, access: &Path, db_path: &Path, port: u16, detach
         .stdout(Stdio::null())
         .stderr(Stdio::null());
     if detach {
-        command.arg("--detach").arg(homedir.join("pyzord.log"));
+        command.arg("--detach").arg(homedir.join("ruzord.log"));
     }
     command.spawn().expect("spawn Rust pyzord")
 }
 
 fn wait_for_server(server: &mut Child, address: &Address) {
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..50 {
-        if let Some(status) = server.try_wait().expect("poll pyzord") {
-            panic!("pyzord exited before readiness: {status}");
+        if let Some(status) = server.try_wait().expect("poll ruzord") {
+            panic!("ruzord exited before readiness: {status}");
         }
         if client
             .ping(address)
@@ -111,11 +111,11 @@ fn wait_for_server(server: &mut Child, address: &Address) {
         }
         thread::sleep(Duration::from_millis(50));
     }
-    panic!("pyzord did not become ready on {}:{}", address.0, address.1);
+    panic!("ruzord did not become ready on {}:{}", address.0, address.1);
 }
 
 fn wait_for_server_detached(address: &Address) {
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..50 {
         if client
             .ping(address)
@@ -127,7 +127,7 @@ fn wait_for_server_detached(address: &Address) {
         thread::sleep(Duration::from_millis(50));
     }
     panic!(
-        "detached pyzord did not become ready on {}:{}",
+        "detached ruzord did not become ready on {}:{}",
         address.0, address.1
     );
 }
@@ -192,7 +192,7 @@ fn terminate(mut child: Child) {
 
 fn wait_for_exit(child: &mut Child) -> std::process::ExitStatus {
     for _ in 0..50 {
-        if let Some(status) = child.try_wait().expect("poll pyzord exit") {
+        if let Some(status) = child.try_wait().expect("poll ruzord exit") {
             return status;
         }
         thread::sleep(Duration::from_millis(50));

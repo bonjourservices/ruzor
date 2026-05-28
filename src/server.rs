@@ -695,10 +695,10 @@ fn clean_legacy_packet(packet: &[u8]) -> Vec<u8> {
 pub fn default_options(homedir: &str) -> ServerOptions {
     ServerOptions {
         address: ("0.0.0.0".to_string(), 24441),
-        database_path: crate::config::expand_homefile(homedir, "pyzord.db"),
+        database_path: crate::config::expand_homefile(homedir, "ruzord.db"),
         engine: "gdbm".to_string(),
-        passwd_path: crate::config::expand_homefile(homedir, "pyzord.passwd"),
-        access_path: crate::config::expand_homefile(homedir, "pyzord.access"),
+        passwd_path: crate::config::expand_homefile(homedir, "ruzord.passwd"),
+        access_path: crate::config::expand_homefile(homedir, "ruzord.access"),
         threads: false,
         max_threads: 0,
         db_connections: 0,
@@ -726,7 +726,7 @@ mod tests {
 
     #[test]
     fn ping_response() {
-        let path = std::env::temp_dir().join(format!("pyzor-test-{}.db", std::process::id()));
+        let path = std::env::temp_dir().join(format!("ruzor-test-{}.db", std::process::id()));
         let db = Arc::new(Mutex::new(FileDatabase::open(&path).unwrap()));
         let mut acl = HashMap::new();
         acl.insert("anonymous".to_string(), HashSet::from(["ping".to_string()]));

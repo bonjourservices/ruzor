@@ -13,7 +13,7 @@ fn pyzor_creates_homedir_and_local_whitelist_with_private_permissions_like_pytho
     let root = temp_dir("client");
     let homedir = root.join("client-home");
 
-    let mut child = Command::new(env!("CARGO_BIN_EXE_pyzor"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_ruzor"))
         .arg("--homedir")
         .arg(&homedir)
         .arg("local_whitelist")
@@ -42,14 +42,14 @@ fn pyzord_creates_homedir_with_private_permissions_like_python_before_config_err
     let root = temp_dir("server");
     let homedir = root.join("server-home");
 
-    let output = Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    let output = Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .arg("--homedir")
         .arg(&homedir)
         .args(["-e", "bogus"])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()
-        .expect("run pyzord");
+        .expect("run ruzord");
 
     assert!(!output.status.success(), "{output:?}");
     assert_eq!(mode(&homedir), 0o700);

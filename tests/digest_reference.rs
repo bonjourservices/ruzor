@@ -1,4 +1,4 @@
-use pyzor::digest::{digest_message, normalize, normalize_html_part, predigest_message};
+use ruzor::digest::{digest_message, normalize, normalize_html_part, predigest_message};
 
 const HTML_TEXT: &str = r#"<html><head><title>Email spam</title></head><body>
 <p><b>Email spam</b>, also known as <b>junk email</b> 

@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
-use pyzor::engines::FileDatabase;
-use pyzor::server::handle_packet;
+use ruzor::engines::FileDatabase;
+use ruzor::server::handle_packet;
 
 #[test]
 fn report_and_check_round_trip_through_handler() {
@@ -10,7 +10,7 @@ fn report_and_check_round_trip_through_handler() {
     let path = std::env::temp_dir().join(format!(
         "pyzor-server-protocol-{}-{}.db",
         std::process::id(),
-        pyzor::account::now_timestamp()
+        ruzor::account::now_timestamp()
     ));
     let db = Arc::new(Mutex::new(FileDatabase::open(&path).unwrap()));
     let accounts = HashMap::new();
@@ -51,7 +51,7 @@ fn default_acl_denies_whitelist() {
     let path = std::env::temp_dir().join(format!(
         "pyzor-server-protocol-deny-{}-{}.db",
         std::process::id(),
-        pyzor::account::now_timestamp()
+        ruzor::account::now_timestamp()
     ));
     let db = Arc::new(Mutex::new(FileDatabase::open(&path).unwrap()));
     let accounts = HashMap::new();

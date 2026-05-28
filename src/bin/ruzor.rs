@@ -4,10 +4,10 @@ use std::io::{self, Read, Write};
 #[cfg(unix)]
 use std::os::raw::{c_char, c_int, c_long, c_uint};
 
-use pyzor::client::Client;
-use pyzor::config::{self, Address};
-use pyzor::digest;
-use pyzor::message::Message;
+use ruzor::client::Client;
+use ruzor::config::{self, Address};
+use ruzor::digest;
+use ruzor::message::Message;
 
 #[derive(Debug, Default)]
 struct ClientOverrides {
@@ -68,7 +68,7 @@ fn run() -> Result<i32, Box<dyn std::error::Error>> {
     let (mut config, commands) = match parse_args(args) {
         Ok(parsed) => parsed,
         Err(error) => {
-            print_parse_error("pyzor", &error);
+            print_parse_error("ruzor", &error);
             return Ok(2);
         }
     };
@@ -77,7 +77,7 @@ fn run() -> Result<i32, Box<dyn std::error::Error>> {
         return Ok(0);
     }
     if config.show_version {
-        println!("{} {}", program, pyzor::VERSION);
+        println!("{} {}", program, ruzor::VERSION);
         return Ok(0);
     }
     if commands.is_empty() {
@@ -90,7 +90,7 @@ fn run() -> Result<i32, Box<dyn std::error::Error>> {
     apply_config_file(&mut config);
     expand_config_paths(&mut config);
     let logger =
-        pyzor::logging::Logger::new("pyzor", optional_path(&config.log_file), config.debug)?;
+        ruzor::logging::Logger::new("ruzor", optional_path(&config.log_file), config.debug)?;
     if !servers_file_has_entries(&config.servers_file) {
         logger.info("No servers specified, defaulting to public.pyzor.org.");
     }
@@ -168,8 +168,8 @@ const PYZOR_LONG_OPTIONS: &[&str] = &[
 
 fn parse_args(args: Vec<String>) -> Result<(ClientConfig, Vec<String>), CliParseError> {
     let default_home = env::var("HOME")
-        .map(|home| format!("{}/.pyzor", home))
-        .unwrap_or_else(|_| "/etc/pyzor".to_string());
+        .map(|home| format!("{}/.ruzor", home))
+        .unwrap_or_else(|_| "/etc/ruzor".to_string());
     let mut config = ClientConfig {
         homedir: default_home,
         servers_file: "servers".to_string(),
@@ -427,7 +427,7 @@ fn execute(
     servers: &[Address],
     config: &ClientConfig,
     input: &[u8],
-    logger: &pyzor::logging::Logger,
+    logger: &ruzor::logging::Logger,
 ) -> Result<bool, Box<dyn std::error::Error>> {
     match command {
         "ping" => command_ping(client, servers),
@@ -661,7 +661,7 @@ fn command_local_whitelist(
     config: &ClientConfig,
     input: &[u8],
     add: bool,
-    logger: &pyzor::logging::Logger,
+    logger: &ruzor::logging::Logger,
 ) -> Result<bool, Box<dyn std::error::Error>> {
     let mut whitelist = config::load_local_whitelist(&config.local_whitelist);
     for digest in input_digests(&config.style, input)? {
@@ -709,12 +709,12 @@ fn random_salt() -> io::Result<[u8; 20]> {
 }
 
 fn genkey_from_password_and_salt(password: &str, salt: &[u8]) -> (String, String) {
-    let salt_digest_bytes = pyzor::sha1::digest(salt);
-    let salt_digest = pyzor::sha1::hexdigest(salt);
+    let salt_digest_bytes = ruzor::sha1::digest(salt);
+    let salt_digest = ruzor::sha1::hexdigest(salt);
     let mut key_input = Vec::with_capacity(salt_digest_bytes.len() + password.len());
     key_input.extend_from_slice(&salt_digest_bytes);
     key_input.extend_from_slice(password.as_bytes());
-    (salt_digest, pyzor::sha1::hexdigest(&key_input))
+    (salt_digest, ruzor::sha1::hexdigest(&key_input))
 }
 
 fn input_digests(style: &str, input: &[u8]) -> Result<Vec<String>, Box<dyn std::error::Error>> {
@@ -733,13 +733,13 @@ fn print_status(server: &Address, response: &Message) {
     println!("{}:{}\t{}", server.0, server.1, response.head_tuple());
 }
 
-fn mock_check_response() -> pyzor::Result<Message> {
+fn mock_check_response() -> ruzor::Result<Message> {
     Ok(Message::parse(
         b"Code: 200\nDiag: OK\nPV: 2.1\nThread: 1024\nCount: 0\nWL-Count: 0\n\n",
     ))
 }
 
-const PYZOR_HELP: &str = r#"Usage: pyzor [options]
+const PYZOR_HELP: &str = r#"Usage: ruzor [options]
 
 Read data from stdin and execute the requested command (one of 'check',
 'report', 'ping', 'pong', 'digest', 'predigest', 'genkey', 'local_whitelist',
@@ -818,7 +818,7 @@ fn initialize_local_timezone() {
             && let Some(zone) = timezone_name_from_localtime_path(&path)
         {
             // SAFETY: this one-time initialization runs before formatting through libc;
-            // no pyzor worker threads are active in the client process at this point.
+            // no ruzor worker threads are active in the client process at this point.
             unsafe {
                 std::env::set_var("TZ", zone);
                 tzset();
@@ -931,7 +931,7 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let path: PathBuf = std::env::temp_dir().join(format!("pyzor-client-{name}-{nanos}"));
+        let path: PathBuf = std::env::temp_dir().join(format!("ruzor-client-{name}-{nanos}"));
         std::fs::create_dir_all(&path).unwrap();
         path.to_string_lossy().to_string()
     }

@@ -12,7 +12,7 @@ fn pyzord_help_matches_python_optparse_and_exits_before_homedir() {
     assert!(output.status.success(), "{output:?}");
     assert_eq!(String::from_utf8_lossy(&output.stderr), "");
     let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.starts_with("Usage: pyzord [options]\n\nListen for and process"));
+    assert!(stdout.starts_with("Usage: ruzord [options]\n\nListen for and process"));
     assert!(stdout.contains("  -h, --help            show this help message and exit"));
     assert!(stdout.contains("  --detach=DETACH       daemonizes the server"));
     assert!(stdout.contains("  -V, --version         print version and exit"));
@@ -35,7 +35,7 @@ fn pyzord_unknown_option_uses_optparse_error_status_and_does_not_create_homedir(
     assert_eq!(String::from_utf8_lossy(&output.stdout), "");
     assert_eq!(
         String::from_utf8_lossy(&output.stderr),
-        "Usage: pyzord [options]\n\npyzord: error: no such option: --bogus\n"
+        "Usage: ruzord [options]\n\nruzord: error: no such option: --bogus\n"
     );
     assert!(
         !homedir.exists(),
@@ -56,7 +56,7 @@ fn pyzord_version_prints_invoked_program_to_stderr_like_python() {
     assert_eq!(String::from_utf8_lossy(&output.stdout), "");
     assert_eq!(
         String::from_utf8_lossy(&output.stderr),
-        format!("{} {}\n", env!("CARGO_BIN_EXE_pyzord"), pyzor::VERSION)
+        format!("{} {}\n", env!("CARGO_BIN_EXE_ruzord"), ruzor::VERSION)
     );
     assert!(
         !homedir.exists(),
@@ -74,7 +74,7 @@ fn pyzord_positional_args_print_help_and_exit_success_like_python() {
     let output = run_pyzord(&homedir, &["unexpected"]);
 
     assert!(output.status.success(), "{output:?}");
-    assert!(String::from_utf8_lossy(&output.stdout).contains("Usage: pyzord [options]"));
+    assert!(String::from_utf8_lossy(&output.stdout).contains("Usage: ruzord [options]"));
     assert_eq!(String::from_utf8_lossy(&output.stderr), "");
     assert!(
         !homedir.exists(),
@@ -85,7 +85,7 @@ fn pyzord_positional_args_print_help_and_exit_success_like_python() {
 }
 
 fn run_pyzord(homedir: &Path, extra_args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .arg("--homedir")
         .arg(homedir)
         .args(extra_args)

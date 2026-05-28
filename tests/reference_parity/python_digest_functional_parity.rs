@@ -8,13 +8,13 @@ use std::time::{SystemTime, UNIX_EPOCH};
 fn digest_functional_attachment_and_encoding_fixtures_match_python() {
     for fixture in python_digest_functional_fixtures() {
         assert_eq!(
-            pyzor::digest::predigest_message(&fixture.message),
+            ruzor::digest::predigest_message(&fixture.message),
             fixture.predigest,
             "predigest mismatch for {}",
             fixture.name
         );
         assert_eq!(
-            pyzor::digest::digest_message(&fixture.message),
+            ruzor::digest::digest_message(&fixture.message),
             fixture.digest,
             "digest mismatch for {}",
             fixture.name
@@ -256,7 +256,7 @@ fn run_python_pyzor_command(homedir: &Path, command: &str, input: &[u8]) -> Outp
 }
 
 fn run_rust_pyzor_command(homedir: &Path, command: &str, input: &[u8]) -> Output {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_pyzor"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_ruzor"))
         .env("TZ", "UTC")
         .arg("--homedir")
         .arg(homedir)

@@ -31,9 +31,9 @@ const WNOHANG: i32 = 1;
 const SIGUSR1: i32 = 10;
 
 #[cfg(unix)]
-#[path = "pyzord/process_mode.rs"]
+#[path = "ruzord/process_mode.rs"]
 mod process_mode;
-use pyzor::server::{self, ServerOptions};
+use ruzor::server::{self, ServerOptions};
 
 #[derive(Debug, Default)]
 struct ServerOverrides {
@@ -265,7 +265,7 @@ fn run() -> Result<i32, Box<dyn std::error::Error>> {
     let mut config = match parse_args(args) {
         Ok(config) => config,
         Err(error) => {
-            print_parse_error("pyzord", &error);
+            print_parse_error("ruzord", &error);
             return Ok(2);
         }
     };
@@ -274,7 +274,7 @@ fn run() -> Result<i32, Box<dyn std::error::Error>> {
         return Ok(0);
     }
     if config.show_version {
-        eprintln!("{} {}", program, pyzor::VERSION);
+        eprintln!("{} {}", program, ruzor::VERSION);
         return Ok(0);
     }
     apply_nice(config.nice)?;
@@ -303,9 +303,9 @@ fn run() -> Result<i32, Box<dyn std::error::Error>> {
     }
     expand_config_paths(&mut config);
     let logger =
-        pyzor::logging::Logger::new("pyzord", optional_path(&config.log_file), config.debug)?;
-    let usage_logger = pyzor::logging::Logger::new(
-        "pyzord-usage",
+        ruzor::logging::Logger::new("ruzord", optional_path(&config.log_file), config.debug)?;
+    let usage_logger = ruzor::logging::Logger::new(
+        "ruzord-usage",
         optional_path(&config.usage_log_file),
         config.debug,
     )?;
@@ -327,11 +327,11 @@ fn run() -> Result<i32, Box<dyn std::error::Error>> {
         eprintln!(
             "{} {} listening on {}:{}",
             program,
-            pyzor::VERSION,
+            ruzor::VERSION,
             config.address,
             config.port
         );
-        logger.info("Starting pyzord server.");
+        logger.info("Starting ruzord server.");
         let result = run_prefork_server(&config, Some(logger.clone()), Some(usage_logger.clone()));
         if cleanup_pidfile {
             let _ = fs::remove_file(pid_file);
@@ -346,12 +346,12 @@ fn run() -> Result<i32, Box<dyn std::error::Error>> {
         eprintln!(
             "{} {} listening on {}:{}",
             program,
-            pyzor::VERSION,
+            ruzor::VERSION,
             config.address,
             config.port
         );
         logger.info(format!(
-            "Starting bounded ({}) multi-processing pyzord server.",
+            "Starting bounded ({}) multi-processing ruzord server.",
             config.max_processes
         ));
         let result = process_mode::run_process_server(
@@ -387,7 +387,7 @@ fn run() -> Result<i32, Box<dyn std::error::Error>> {
     eprintln!(
         "{} {} listening on {}:{}",
         program,
-        pyzor::VERSION,
+        ruzor::VERSION,
         config.address,
         config.port
     );
@@ -433,9 +433,9 @@ fn supports_prefork(engine: &str) -> bool {
 
 fn server_options(
     config: &ServerConfig,
-    forwarder: Option<pyzor::forwarder::Forwarder>,
-    logger: Option<pyzor::logging::Logger>,
-    usage_logger: Option<pyzor::logging::Logger>,
+    forwarder: Option<ruzor::forwarder::Forwarder>,
+    logger: Option<ruzor::logging::Logger>,
+    usage_logger: Option<ruzor::logging::Logger>,
 ) -> ServerOptions {
     ServerOptions {
         address: (config.address.clone(), config.port),
@@ -456,8 +456,8 @@ fn server_options(
 #[cfg(unix)]
 fn run_prefork_server(
     config: &ServerConfig,
-    logger: Option<pyzor::logging::Logger>,
-    usage_logger: Option<pyzor::logging::Logger>,
+    logger: Option<ruzor::logging::Logger>,
+    usage_logger: Option<ruzor::logging::Logger>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let socket = UdpSocket::bind((config.address.as_str(), config.port))?;
     let mut pids = Vec::with_capacity(config.pre_fork);
@@ -565,14 +565,14 @@ fn wait_for_children(pids: &mut Vec<c_int>) {
 
 #[derive(Clone, Debug)]
 struct ForwardingConfig {
-    client: pyzor::client::Client,
-    servers: Vec<pyzor::config::Address>,
+    client: ruzor::client::Client,
+    servers: Vec<ruzor::config::Address>,
 }
 
 fn load_forwarding_config(
     client_config_dir: &str,
 ) -> Result<ForwardingConfig, Box<dyn std::error::Error>> {
-    let values = pyzor::config::read_ini_section(format!("{}/config", client_config_dir), "client");
+    let values = ruzor::config::read_ini_section(format!("{}/config", client_config_dir), "client");
     let servers_file = values
         .get("serversfile")
         .cloned()
@@ -586,21 +586,21 @@ fn load_forwarding_config(
         .and_then(|value| value.parse().ok())
         .unwrap_or(5);
 
-    let servers_path = pyzor::config::expand_homefile(client_config_dir, &servers_file);
-    let accounts_path = pyzor::config::expand_homefile(client_config_dir, &accounts_file);
-    let servers = pyzor::config::load_servers(servers_path);
-    let accounts = pyzor::config::load_accounts(accounts_path);
+    let servers_path = ruzor::config::expand_homefile(client_config_dir, &servers_file);
+    let accounts_path = ruzor::config::expand_homefile(client_config_dir, &accounts_file);
+    let servers = ruzor::config::load_servers(servers_path);
+    let accounts = ruzor::config::load_accounts(accounts_path);
     let client =
-        pyzor::client::Client::new(accounts, Some(timeout), pyzor::digest::DIGEST_SPEC.to_vec());
+        ruzor::client::Client::new(accounts, Some(timeout), ruzor::digest::DIGEST_SPEC.to_vec());
     Ok(ForwardingConfig { client, servers })
 }
 
 fn initialize_forwarding(
     client_config_dir: &str,
-) -> Result<pyzor::forwarder::ForwarderHandle, Box<dyn std::error::Error>> {
+) -> Result<ruzor::forwarder::ForwarderHandle, Box<dyn std::error::Error>> {
     let config = load_forwarding_config(client_config_dir)?;
-    let batch_client = pyzor::client::BatchClient::new(config.client, 10);
-    Ok(pyzor::forwarder::ForwarderHandle::start(
+    let batch_client = ruzor::client::BatchClient::new(config.client, 10);
+    Ok(ruzor::forwarder::ForwarderHandle::start(
         batch_client,
         config.servers,
         10_000,
@@ -636,22 +636,22 @@ const PYZORD_LONG_OPTIONS: &[&str] = &[
 
 fn parse_args(args: Vec<String>) -> Result<ServerConfig, CliParseError> {
     let default_home = env::var("HOME")
-        .map(|home| format!("{}/.pyzor", home))
-        .unwrap_or_else(|_| "/etc/pyzor".to_string());
+        .map(|home| format!("{}/.ruzor", home))
+        .unwrap_or_else(|_| "/etc/ruzor".to_string());
     let mut config = ServerConfig {
         homedir: default_home,
         address: "0.0.0.0".to_string(),
         port: 24441,
         engine: "gdbm".to_string(),
-        digest_db: "pyzord.db".to_string(),
-        passwd_file: "pyzord.passwd".to_string(),
-        access_file: "pyzord.access".to_string(),
+        digest_db: "ruzord.db".to_string(),
+        passwd_file: "ruzord.passwd".to_string(),
+        access_file: "ruzord.access".to_string(),
         log_file: String::new(),
         usage_log_file: String::new(),
         processes: false,
         max_processes: 40,
         pre_fork: 0,
-        pid_file: "pyzord.pid".to_string(),
+        pid_file: "ruzord.pid".to_string(),
         threads: false,
         max_threads: 0,
         db_connections: 0,
@@ -867,7 +867,7 @@ where
     })
 }
 
-const PYZORD_HELP: &str = r#"Usage: pyzord [options]
+const PYZORD_HELP: &str = r#"Usage: ruzord [options]
 
 Listen for and process incoming Pyzor connections.
 
@@ -913,8 +913,8 @@ Options:
   --pid-file=PIDFILE    save the pid in this file after the server is
                         daemonized
   --forward-client-homedir=FORWARDCLIENTHOMEDIR
-                        Specify a pyzor client configuration directory to
-                        forward received digests to a remote pyzor server
+                        Specify a Ruzor client configuration directory to
+                        forward received digests to a remote Pyzor-compatible server
   --detach=DETACH       daemonizes the server and redirects any output to the
                         specified file
   -V, --version         print version and exit
@@ -930,7 +930,7 @@ fn print_parse_error(program: &str, error: &CliParseError) {
 }
 
 fn apply_config_file(config: &mut ServerConfig) {
-    let values = pyzor::config::read_ini_section(format!("{}/config", config.homedir), "server");
+    let values = ruzor::config::read_ini_section(format!("{}/config", config.homedir), "server");
     for (key, value) in values {
         let key = key.to_ascii_lowercase();
         match key.as_str() {
@@ -975,18 +975,18 @@ fn apply_config_file(config: &mut ServerConfig) {
 
 fn expand_config_paths(config: &mut ServerConfig) {
     if config.engine == "gdbm" {
-        config.digest_db = pyzor::config::expand_homefile(&config.homedir, &config.digest_db);
+        config.digest_db = ruzor::config::expand_homefile(&config.homedir, &config.digest_db);
     }
-    config.passwd_file = pyzor::config::expand_homefile(&config.homedir, &config.passwd_file);
-    config.access_file = pyzor::config::expand_homefile(&config.homedir, &config.access_file);
+    config.passwd_file = ruzor::config::expand_homefile(&config.homedir, &config.passwd_file);
+    config.access_file = ruzor::config::expand_homefile(&config.homedir, &config.access_file);
     if !config.log_file.is_empty() {
-        config.log_file = pyzor::config::expand_homefile(&config.homedir, &config.log_file);
+        config.log_file = ruzor::config::expand_homefile(&config.homedir, &config.log_file);
     }
     if !config.usage_log_file.is_empty() {
         config.usage_log_file =
-            pyzor::config::expand_homefile(&config.homedir, &config.usage_log_file);
+            ruzor::config::expand_homefile(&config.homedir, &config.usage_log_file);
     }
-    config.pid_file = pyzor::config::expand_homefile(&config.homedir, &config.pid_file);
+    config.pid_file = ruzor::config::expand_homefile(&config.homedir, &config.pid_file);
 }
 
 fn optional_path(path: &str) -> Option<String> {
@@ -997,16 +997,16 @@ fn optional_path(path: &str) -> Option<String> {
     }
 }
 
-fn log_normal_starting(logger: &pyzor::logging::Logger, config: &ServerConfig) {
+fn log_normal_starting(logger: &ruzor::logging::Logger, config: &ServerConfig) {
     if config.threads && config.max_threads == 0 {
-        logger.info("Starting multi-threaded pyzord server.");
+        logger.info("Starting multi-threaded ruzord server.");
     } else if config.threads {
         logger.info(format!(
-            "Starting bounded ({}) multi-threaded pyzord server.",
+            "Starting bounded ({}) multi-threaded ruzord server.",
             config.max_threads
         ));
     } else {
-        logger.info("Starting pyzord server.");
+        logger.info("Starting ruzord server.");
     }
 }
 
@@ -1021,7 +1021,7 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let path: PathBuf = std::env::temp_dir().join(format!("pyzord-server-{name}-{nanos}"));
+        let path: PathBuf = std::env::temp_dir().join(format!("ruzord-server-{name}-{nanos}"));
         std::fs::create_dir_all(&path).unwrap();
         path.to_string_lossy().to_string()
     }

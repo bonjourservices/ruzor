@@ -5,8 +5,8 @@ use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use pyzor::client::Client;
-use pyzor::config::Address;
+use ruzor::client::Client;
+use ruzor::config::Address;
 
 const DIGEST: &str = "7421216f915a87e02da034cc483f5c876e1a1338";
 
@@ -24,7 +24,7 @@ fn gdbm_thread_modes_match_python_functional_matrix() {
         std::fs::write(homedir.join("passwd"), "").unwrap();
         let port = free_udp_port();
         let address: Address = ("127.0.0.1".to_string(), port);
-        let mut command = Command::new(env!("CARGO_BIN_EXE_pyzord"));
+        let mut command = Command::new(env!("CARGO_BIN_EXE_ruzord"));
         command
             .arg("--homedir")
             .arg(&homedir)
@@ -33,7 +33,7 @@ fn gdbm_thread_modes_match_python_functional_matrix() {
             .arg("--access-file")
             .arg("access")
             .arg("--dsn")
-            .arg(homedir.join("pyzord.db"))
+            .arg(homedir.join("ruzord.db"))
             .arg("-a")
             .arg("127.0.0.1")
             .arg("-p")
@@ -47,7 +47,7 @@ fn gdbm_thread_modes_match_python_functional_matrix() {
         let mut server = command.spawn().expect("spawn threaded pyzord");
 
         wait_for_server(&mut server, &address);
-        let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+        let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
         assert!(client.ping(&address).unwrap().is_ok());
         assert!(client.report(DIGEST, &address).unwrap().is_ok());
         assert!(client.report(DIGEST, &address).unwrap().is_ok());
@@ -68,7 +68,7 @@ fn processes_option_falls_back_for_file_backend_like_python() {
     std::fs::write(homedir.join("passwd"), "").unwrap();
     let port = free_udp_port();
     let address: Address = ("127.0.0.1".to_string(), port);
-    let mut server = Command::new(env!("CARGO_BIN_EXE_pyzord"))
+    let mut server = Command::new(env!("CARGO_BIN_EXE_ruzord"))
         .arg("--homedir")
         .arg(&homedir)
         .arg("--password-file")
@@ -76,7 +76,7 @@ fn processes_option_falls_back_for_file_backend_like_python() {
         .arg("--access-file")
         .arg("access")
         .arg("--dsn")
-        .arg(homedir.join("pyzord.db"))
+        .arg(homedir.join("ruzord.db"))
         .arg("--processes")
         .arg("true")
         .arg("--max-processes")
@@ -89,10 +89,10 @@ fn processes_option_falls_back_for_file_backend_like_python() {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .expect("spawn pyzord with process option fallback");
+        .expect("spawn ruzord with process option fallback");
 
     wait_for_server(&mut server, &address);
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     assert!(client.report(DIGEST, &address).unwrap().is_ok());
     let response = client.check(DIGEST, &address).unwrap();
     assert_eq!(response.get("Count"), Some("1"));
@@ -103,10 +103,10 @@ fn processes_option_falls_back_for_file_backend_like_python() {
 }
 
 fn wait_for_server(server: &mut Child, address: &Address) {
-    let client = Client::new(HashMap::new(), Some(1), pyzor::digest::DIGEST_SPEC.to_vec());
+    let client = Client::new(HashMap::new(), Some(1), ruzor::digest::DIGEST_SPEC.to_vec());
     for _ in 0..50 {
-        if let Some(status) = server.try_wait().expect("poll pyzord") {
-            panic!("pyzord exited before readiness: {status}");
+        if let Some(status) = server.try_wait().expect("poll ruzord") {
+            panic!("ruzord exited before readiness: {status}");
         }
         if client
             .ping(address)
@@ -117,7 +117,7 @@ fn wait_for_server(server: &mut Child, address: &Address) {
         }
         thread::sleep(Duration::from_millis(50));
     }
-    panic!("pyzord did not become ready on {}:{}", address.0, address.1);
+    panic!("ruzord did not become ready on {}:{}", address.0, address.1);
 }
 
 fn stop(mut child: Child) {
