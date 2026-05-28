@@ -306,7 +306,7 @@ Benchmark snapshot from May 28, 2026 on Apple M3 Pro, macOS 26.5 arm64, Python 3
 | UDP `check` p50 latency | 133.8 us | 35.4 us | -73.5% |
 | UDP `check` throughput | 7,131 req/s | 26,508 req/s | +272% |
 
-Pyzor's installed package alone was 283.3 KiB in this run, but its `pyzor` and `pyzord` commands are Python scripts and require a Python runtime. A gdbm-only Ruzor release archive was 0.74 MiB. These numbers are local-loopback measurements, so use the included benchmark harness when comparing on another machine or before publishing updated claims.
+These numbers are local-loopback measurements, so use the included benchmark harness when comparing on another machine or before publishing updated claims.
 
 ## Feature Flags
 
