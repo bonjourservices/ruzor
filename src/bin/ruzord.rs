@@ -54,6 +54,7 @@ struct ServerOverrides {
     pre_fork: bool,
     cleanup_age: bool,
     forward_client_homedir: bool,
+    proxy_sources: bool,
 }
 
 #[derive(Debug)]
@@ -76,6 +77,7 @@ struct ServerConfig {
     db_connections: usize,
     cleanup_age: Option<i64>,
     forward_client_homedir: String,
+    proxy_sources: Vec<ruzor::config::Address>,
     detach: Option<String>,
     debug: bool,
     nice: i32,
@@ -407,6 +409,7 @@ fn run() -> Result<i32, Box<dyn std::error::Error>> {
             max_threads: config.max_threads,
             db_connections: config.db_connections,
             cleanup_age: config.cleanup_age,
+            proxy_sources: config.proxy_sources,
             forwarder: server_forwarder,
             logger: Some(logger.clone()),
             usage_logger: Some(usage_logger.clone()),
@@ -447,6 +450,7 @@ fn server_options(
         max_threads: config.max_threads,
         db_connections: config.db_connections,
         cleanup_age: config.cleanup_age,
+        proxy_sources: config.proxy_sources.clone(),
         forwarder,
         logger,
         usage_logger,
@@ -630,6 +634,7 @@ const PYZORD_LONG_OPTIONS: &[&str] = &[
     "--usage-log-file",
     "--pid-file",
     "--forward-client-homedir",
+    "--proxy-source",
     "--detach",
     "--version",
 ];
@@ -657,6 +662,7 @@ fn parse_args(args: Vec<String>) -> Result<ServerConfig, CliParseError> {
         db_connections: 0,
         cleanup_age: Some(server::DEFAULT_CLEANUP_AGE),
         forward_client_homedir: String::new(),
+        proxy_sources: Vec::new(),
         detach: None,
         debug: false,
         nice: 0,
@@ -760,6 +766,11 @@ fn parse_args(args: Vec<String>) -> Result<ServerConfig, CliParseError> {
                 config.forward_client_homedir = option_value(option, inline_value, &mut iter)?;
                 config.overrides.forward_client_homedir = true;
             }
+            "--proxy-source" => {
+                config.proxy_sources =
+                    parse_proxy_sources(&option_value(option, inline_value, &mut iter)?);
+                config.overrides.proxy_sources = true;
+            }
             "--password-file" => {
                 config.passwd_file = option_value(option, inline_value, &mut iter)?;
                 config.overrides.passwd_file = true;
@@ -779,6 +790,23 @@ fn parse_args(args: Vec<String>) -> Result<ServerConfig, CliParseError> {
         }
     }
     Ok(config)
+}
+
+fn parse_proxy_sources(value: &str) -> Vec<ruzor::config::Address> {
+    value
+        .split(',')
+        .filter_map(|source| {
+            let source = source.trim();
+            if source.is_empty() {
+                return None;
+            }
+            let (host, port) = source
+                .rsplit_once(':')
+                .and_then(|(host, port)| port.parse().ok().map(|port| (host, port)))
+                .unwrap_or((source, 24441));
+            Some((host.to_string(), port))
+        })
+        .collect()
 }
 
 fn parse_option_arg(
@@ -915,6 +943,8 @@ Options:
   --forward-client-homedir=FORWARDCLIENTHOMEDIR
                         Specify a Ruzor client configuration directory to
                         forward received digests to a remote Pyzor-compatible server
+  --proxy-source=PROXYSOURCE
+                        comma-separated host[:port] sources checked on local check misses
   --detach=DETACH       daemonizes the server and redirects any output to the
                         specified file
   -V, --version         print version and exit
@@ -954,6 +984,9 @@ fn apply_config_file(config: &mut ServerConfig) {
             "pidfile" if !config.overrides.pid_file => config.pid_file = value,
             "forwardclienthomedir" if !config.overrides.forward_client_homedir => {
                 config.forward_client_homedir = value
+            }
+            "proxysource" | "proxysources" if !config.overrides.proxy_sources => {
+                config.proxy_sources = parse_proxy_sources(&value)
             }
             "processes" if !config.overrides.processes => {
                 config.processes = value.eq_ignore_ascii_case("true")
@@ -1056,6 +1089,7 @@ digestdb = configdb
 threads = True
 maxthreads = 5
 dbconnections = 7
+proxysources = public.pyzor.org,127.0.0.1:24442
 passwdfile = config.passwd
 accessfile = config.access
 pidfile = config.pid
@@ -1076,6 +1110,13 @@ cleanupage = 9
         assert!(config.threads);
         assert_eq!(config.max_threads, 5);
         assert_eq!(config.db_connections, 7);
+        assert_eq!(
+            config.proxy_sources,
+            vec![
+                ("public.pyzor.org".to_string(), 24441),
+                ("127.0.0.1".to_string(), 24442)
+            ]
+        );
         assert_eq!(config.passwd_file, "config.passwd");
         assert_eq!(config.access_file, "config.access");
         assert_eq!(config.pid_file, "config.pid");
@@ -1159,6 +1200,27 @@ timeout = 1
         assert_eq!(config.digest_db, dsn);
         assert!(config.passwd_file.starts_with(&homedir));
         let _ = std::fs::remove_dir_all(homedir);
+    }
+
+    #[test]
+    fn proxy_source_option_is_parsed_and_applied_to_server_options() {
+        let config = parse_args(vec![
+            "--proxy-source".into(),
+            "public.pyzor.org,127.0.0.1:24442".into(),
+        ])
+        .unwrap();
+
+        assert_eq!(
+            config.proxy_sources,
+            vec![
+                ("public.pyzor.org".to_string(), 24441),
+                ("127.0.0.1".to_string(), 24442)
+            ]
+        );
+        assert_eq!(
+            server_options(&config, None, None, None).proxy_sources,
+            config.proxy_sources
+        );
     }
 
     #[test]

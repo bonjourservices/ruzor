@@ -83,6 +83,7 @@ pub(super) fn run_process_server(
         let acl = auth.acl.clone();
         let engine = config.engine.clone();
         let database_path = config.digest_db.clone();
+        let proxy_sources = config.proxy_sources.clone();
         let usage_logger = usage_logger.clone();
 
         match unsafe { fork() } {
@@ -107,7 +108,13 @@ pub(super) fn run_process_server(
                         process::exit(0);
                     }
                 };
-                let response = ruzor::server::handle_packet(&packet, &db, &accounts, &acl);
+                let response = ruzor::server::handle_packet_with_proxy_sources(
+                    &packet,
+                    &db,
+                    &accounts,
+                    &acl,
+                    &proxy_sources,
+                );
                 let response_ok = response.is_ok();
                 ruzor::server::log_usage_for_response(
                     &packet,

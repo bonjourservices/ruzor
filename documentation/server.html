@@ -136,8 +136,18 @@
     </tbody>
   </table>
   <pre><code>ruzord -e redis --dsn 127.0.0.1,6379,,0 -a 127.0.0.1 -p 24441
+ruzord -e redis --dsn 127.0.0.1,6379,,0 -a 0.0.0.0 -p 24441 \
+  --proxy-source public.pyzor.org
 ruzord -e redis_v0 --dsn 127.0.0.1,6379,,0 -a 127.0.0.1 -p 24441
 ruzord -e mysql --dsn 127.0.0.1,ruzor,secret,ruzord,digests -a 127.0.0.1 -p 24441</code></pre>
+</section>
+
+
+<section class="section">
+  <h2>Proxy Sources</h2>
+  <p><code>--proxy-source</code> accepts comma-separated <code>host[:port]</code> sources. When a local <code>check</code> has no positive match, <code>ruzord</code> checks those Pyzor-compatible sources in order and caches positive upstream responses in the active backend.</p>
+  <pre><code>ruzord -e redis --dsn 127.0.0.1,6379,,0 -a 0.0.0.0 -p 24441 \
+  --proxy-source public.pyzor.org,backup.example:24441</code></pre>
 </section>
 
 <section class="section">

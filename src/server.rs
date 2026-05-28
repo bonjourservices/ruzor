@@ -6,9 +6,10 @@ use std::sync::{Arc, Condvar, Mutex, RwLock};
 use std::thread;
 use std::time::Duration;
 
-use crate::account;
+use crate::account::{self, now_timestamp};
+use crate::client::Client;
 use crate::config::Address;
-use crate::engines::{DigestDatabase, FileDatabase};
+use crate::engines::{DigestDatabase, FileDatabase, Record};
 use crate::error::PyzorError;
 use crate::forwarder::Forwarder;
 #[cfg(feature = "backend-gdbm")]
@@ -37,6 +38,7 @@ pub struct ServerOptions {
     pub max_threads: usize,
     pub db_connections: usize,
     pub cleanup_age: Option<i64>,
+    pub proxy_sources: Vec<Address>,
     pub forwarder: Option<Forwarder>,
     pub logger: Option<Logger>,
     pub usage_logger: Option<Logger>,
@@ -317,6 +319,7 @@ fn serve_socket_with_control(
         let db = Arc::clone(&db);
         let auth = Arc::clone(&auth);
         let forwarder = options.forwarder.clone();
+        let proxy_sources = options.proxy_sources.clone();
         let logger = options.logger.clone();
         let usage_logger = options.usage_logger.clone();
         if options.threads {
@@ -338,6 +341,7 @@ fn serve_socket_with_control(
                     &auth.accounts,
                     &auth.acl,
                     forwarder.as_ref(),
+                    &proxy_sources,
                     debug,
                 );
                 log_usage_for_response(&packet, &peer_ip, &response, usage_logger.as_ref());
@@ -363,6 +367,7 @@ fn serve_socket_with_control(
                 &auth.accounts,
                 &auth.acl,
                 forwarder.as_ref(),
+                &options.proxy_sources,
                 debug,
             );
             log_usage_for_response(&packet, &peer_ip, &response, usage_logger.as_ref());
@@ -458,7 +463,17 @@ pub fn handle_packet<D: DigestDatabase + ?Sized>(
     accounts: &HashMap<String, String>,
     acl: &HashMap<String, HashSet<String>>,
 ) -> Message {
-    handle_packet_with_forwarder(packet, db, accounts, acl, None, None)
+    handle_packet_with_forwarder(packet, db, accounts, acl, None, &[], None)
+}
+
+pub fn handle_packet_with_proxy_sources<D: DigestDatabase + ?Sized>(
+    packet: &[u8],
+    db: &Arc<Mutex<D>>,
+    accounts: &HashMap<String, String>,
+    acl: &HashMap<String, HashSet<String>>,
+    proxy_sources: &[Address],
+) -> Message {
+    handle_packet_with_forwarder(packet, db, accounts, acl, None, proxy_sources, None)
 }
 
 #[derive(Clone, Copy)]
@@ -473,6 +488,7 @@ fn handle_packet_with_forwarder<D: DigestDatabase + ?Sized>(
     accounts: &HashMap<String, String>,
     acl: &HashMap<String, HashSet<String>>,
     forwarder: Option<&Forwarder>,
+    proxy_sources: &[Address],
     debug: Option<RequestDebugContext<'_>>,
 ) -> Message {
     let cleaned = clean_legacy_packet(packet);
@@ -480,7 +496,16 @@ fn handle_packet_with_forwarder<D: DigestDatabase + ?Sized>(
     let mut response = message::response(request.get("Thread"));
 
     match panic::catch_unwind(AssertUnwindSafe(|| {
-        really_handle(&request, &mut response, db, accounts, acl, forwarder, debug)
+        really_handle(
+            &request,
+            &mut response,
+            db,
+            accounts,
+            acl,
+            forwarder,
+            proxy_sources,
+            debug,
+        )
     })) {
         Ok(Ok(())) => {}
         Ok(Err(error)) => apply_error(&mut response, error),
@@ -498,6 +523,7 @@ fn really_handle<D: DigestDatabase + ?Sized>(
     accounts: &HashMap<String, String>,
     acl: &HashMap<String, HashSet<String>>,
     forwarder: Option<&Forwarder>,
+    proxy_sources: &[Address],
     debug: Option<RequestDebugContext<'_>>,
 ) -> Result<()> {
     let user = request.get("User").unwrap_or(ANONYMOUS_USER);
@@ -553,11 +579,17 @@ fn really_handle<D: DigestDatabase + ?Sized>(
         }
         "check" => {
             if let Some(digest) = digests.first() {
-                let record = with_database(db, |database| database.get(digest))?;
+                let mut record = with_database(db, |database| database.get(digest))?;
                 if let Some(debug) = debug {
                     debug
                         .logger
                         .debug(format!("Request to check digest {digest}"));
+                }
+                if !record_has_match(&record)
+                    && let Some(proxy_record) = proxy_check_miss(digest, proxy_sources, debug)
+                {
+                    with_database(db, |database| database.set(digest, proxy_record.clone()))?;
+                    record = proxy_record;
                 }
                 response.add_header("Count", record.r_count.to_string());
                 response.add_header("WL-Count", record.wl_count.to_string());
@@ -620,6 +652,80 @@ fn really_handle<D: DigestDatabase + ?Sized>(
         }
     }
     Ok(())
+}
+
+fn proxy_check_miss(
+    digest: &str,
+    proxy_sources: &[Address],
+    debug: Option<RequestDebugContext<'_>>,
+) -> Option<Record> {
+    if proxy_sources.is_empty() {
+        return None;
+    }
+    let client = Client::default();
+    for source in proxy_sources {
+        if let Some(debug) = debug {
+            debug.logger.debug(format!(
+                "Proxying check miss for digest {digest} to {}:{}",
+                source.0, source.1
+            ));
+        }
+        match client.check(digest, source) {
+            Ok(response) => {
+                if let Some(record) = record_from_proxy_response(&response) {
+                    return Some(record);
+                }
+            }
+            Err(error) => {
+                if let Some(debug) = debug {
+                    debug.logger.debug(format!(
+                        "Proxy source {}:{} failed for digest {digest}: {error}",
+                        source.0, source.1
+                    ));
+                }
+            }
+        }
+    }
+    None
+}
+
+fn record_from_proxy_response(response: &Message) -> Option<Record> {
+    if !response.is_ok() {
+        return None;
+    }
+    let r_count = parse_i64_header(response, "Count");
+    let wl_count = parse_i64_header(response, "WL-Count");
+    if r_count <= 0 && wl_count <= 0 {
+        return None;
+    }
+    let now = now_timestamp();
+    Some(Record {
+        r_count,
+        wl_count,
+        r_entered: proxy_time_or_now(response, "Entered", r_count, now),
+        r_updated: proxy_time_or_now(response, "Updated", r_count, now),
+        wl_entered: proxy_time_or_now(response, "WL-Entered", wl_count, now),
+        wl_updated: proxy_time_or_now(response, "WL-Updated", wl_count, now),
+    })
+}
+
+fn parse_i64_header(response: &Message, name: &str) -> i64 {
+    response
+        .get(name)
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(0)
+}
+
+fn proxy_time_or_now(response: &Message, name: &str, count: i64, now: i64) -> Option<i64> {
+    response
+        .get(name)
+        .and_then(|value| value.parse().ok())
+        .filter(|value| *value > 0)
+        .or_else(|| (count > 0).then_some(now))
+}
+
+fn record_has_match(record: &Record) -> bool {
+    record.r_count > 0 || record.wl_count > 0
 }
 
 fn protocol_major(value: &str) -> Result<i64> {
@@ -703,6 +809,7 @@ pub fn default_options(homedir: &str) -> ServerOptions {
         max_threads: 0,
         db_connections: 0,
         cleanup_age: Some(DEFAULT_CLEANUP_AGE),
+        proxy_sources: Vec::new(),
         forwarder: None,
         logger: None,
         usage_logger: None,
@@ -717,11 +824,12 @@ fn _protocol_version() -> &'static str {
 #[cfg(test)]
 mod tests {
     use std::collections::{HashMap, HashSet};
+    use std::net::UdpSocket;
     use std::sync::{Arc, Mutex, mpsc};
     use std::thread;
     use std::time::Duration;
 
-    use super::handle_packet;
+    use super::{handle_packet, handle_packet_with_proxy_sources};
     use crate::engines::FileDatabase;
 
     #[test]
@@ -739,6 +847,62 @@ mod tests {
         assert_eq!(response.get("Code"), Some("200"));
         assert_eq!(response.get("Thread"), Some("1234"));
         let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn check_miss_queries_proxy_source_and_caches_positive_response() {
+        let path = std::env::temp_dir().join(format!("ruzor-proxy-test-{}.db", std::process::id()));
+        let db = Arc::new(Mutex::new(FileDatabase::open(&path).unwrap()));
+        let mut acl = HashMap::new();
+        acl.insert(
+            "anonymous".to_string(),
+            HashSet::from(["check".to_string()]),
+        );
+        let digest = "dc5451ed15efee48b5257e1df2d12318";
+        let (proxy_source, proxy) = start_check_proxy(7, 2);
+
+        let response = handle_packet_with_proxy_sources(
+            format!("Op: check\nThread: 1234\nPV: 2.1\nUser: anonymous\nOp-Digest: {digest}\n\n")
+                .as_bytes(),
+            &db,
+            &HashMap::new(),
+            &acl,
+            &[proxy_source],
+        );
+
+        assert_eq!(response.get("Code"), Some("200"));
+        assert_eq!(response.get("Count"), Some("7"));
+        assert_eq!(response.get("WL-Count"), Some("2"));
+        proxy.join().unwrap();
+
+        let stored = db.lock().unwrap().get(digest);
+        assert_eq!(stored.r_count, 7);
+        assert_eq!(stored.wl_count, 2);
+        assert!(stored.r_entered.is_some());
+        assert!(stored.r_updated.is_some());
+        assert!(stored.wl_entered.is_some());
+        assert!(stored.wl_updated.is_some());
+        let _ = std::fs::remove_file(path);
+    }
+
+    fn start_check_proxy(
+        count: i64,
+        wl_count: i64,
+    ) -> (crate::config::Address, thread::JoinHandle<()>) {
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let port = socket.local_addr().unwrap().port();
+        let handle = thread::spawn(move || {
+            let mut buf = [0u8; crate::MAX_PACKET_SIZE];
+            let (len, peer) = socket.recv_from(&mut buf).unwrap();
+            let request = crate::message::Message::parse(&buf[..len]);
+            assert_eq!(request.get("Op"), Some("check"));
+            let thread = request.get("Thread").unwrap_or("1234");
+            let response = format!(
+                "Code: 200\nDiag: OK\nThread: {thread}\nPV: 2.1\nCount: {count}\nWL-Count: {wl_count}\n\n"
+            );
+            socket.send_to(response.as_bytes(), peer).unwrap();
+        });
+        (("127.0.0.1".to_string(), port), handle)
     }
 
     #[test]

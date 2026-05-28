@@ -159,9 +159,11 @@ AccessFile = ruzord.access
 Engine = gdbm
 DigestDB = ruzord.db
 CleanupAge = 0
+ProxySources = public.pyzor.org
 Threads = false
 Processes = false
 PreFork = 0</code></pre>
+  <p><code>ProxySources</code> is optional. It mirrors <code>--proxy-source</code> and only affects local <code>check</code> misses.</p>
 </section>
 
 <section class="section">

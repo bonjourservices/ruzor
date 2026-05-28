@@ -163,12 +163,18 @@ Backend examples:
 # Redis v1 hash backend
 ruzord -e redis --dsn 127.0.0.1,6379,,0 -a 127.0.0.1 -p 24441
 
+# Redis with upstream check-miss proxying and local positive-cache writes
+ruzord -e redis --dsn 127.0.0.1,6379,,0 -a 0.0.0.0 -p 24441 \
+  --proxy-source public.pyzor.org
+
 # Legacy Redis v0 string backend
 ruzord -e redis_v0 --dsn 127.0.0.1,6379,,0 -a 127.0.0.1 -p 24441
 
 # MySQL backend: host,user,password,database,table
 ruzord -e mysql --dsn 127.0.0.1,ruzor,secret,ruzord,digests -a 127.0.0.1 -p 24441
 ```
+
+`--proxy-source` accepts a comma-separated list of `host[:port]` Pyzor-compatible servers. On a local `check` miss, `ruzord` checks those sources in order and stores positive upstream `Count` or `WL-Count` responses in the configured backend before replying.
 
 The MySQL table must use the upstream Pyzor schema:
 
