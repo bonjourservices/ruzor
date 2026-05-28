@@ -255,6 +255,37 @@ PYZOR_MYSQL_DSN=host,user,password,db,table cargo test --test mysql_backend -- -
 cargo test --test gdbm_native_backend -- --test-threads=1
 ```
 
+## Benchmarks
+
+Run local comparison benchmarks against upstream Pyzor 1.1.2:
+
+```sh
+cargo build --release --locked
+python3 -m pip install --target /tmp/ruzor-bench-pyzor pyzor==1.1.2
+python3 benchmarks/run_benchmarks.py --repo-root .
+```
+
+Use a Python interpreter with `dbm.gnu` support for the Python `pyzord` comparison. On Homebrew macOS, pass `--python-bin /opt/homebrew/bin/python3` if needed.
+
+Benchmark snapshot from May 28, 2026 on Apple M3 Pro, macOS 26.5 arm64, Python 3.14.5, hyperfine 1.20.0, and release-mode Ruzor binaries:
+
+| What | Python (Pyzor) | Rust (Ruzor) | Difference |
+| --- | ---: | ---: | ---: |
+| Client program footprint | 96.4 MiB Python runtime + 14.7 KiB script | 710.4 KiB native binary | -99.3% |
+| Server program footprint | 96.4 MiB Python runtime + 16.4 KiB script | 2.36 MiB native binary | -97.5% |
+| Release package footprint | 96.6 MiB Pyzor install + runtime | 1.43 MiB release archive | -98.5% |
+| Client startup latency | 65.23 ms | 4.44 ms | -93.2% |
+| Small message digest latency | 59.34 ms | 3.40 ms | -94.3% |
+| 46 KiB message digest latency | 65.61 ms | 2.88 ms | -95.6% |
+| 100-message mbox digest latency | 62.31 ms | 5.40 ms | -91.3% |
+| Idle server RSS | 26.61 MiB | 1.77 MiB | -93.3% |
+| UDP `ping` p50 latency | 99.1 us | 26.9 us | -72.9% |
+| UDP `ping` throughput | 9,698 req/s | 30,571 req/s | +215% |
+| UDP `check` p50 latency | 133.8 us | 35.4 us | -73.5% |
+| UDP `check` throughput | 7,131 req/s | 26,508 req/s | +272% |
+
+Pyzor's installed package alone was 283.3 KiB in this run, but its `pyzor` and `pyzord` commands are Python scripts and require a Python runtime. A gdbm-only Ruzor release archive was 0.74 MiB. These numbers are local-loopback measurements, so use the included benchmark harness when comparing on another machine or before publishing updated claims.
+
 ## Feature Flags
 
 | Feature | Default | Description |

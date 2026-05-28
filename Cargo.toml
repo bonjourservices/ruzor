@@ -18,6 +18,7 @@ include = [
     "Cargo.toml",
     "LICENSE",
     "README.md",
+    "benchmarks/**",
     "src/**",
     "tests/**",
     "!tests/reference_parity/**",
@@ -51,3 +52,8 @@ backend-mysql = ["dep:mysql"]
 [package.metadata.docs.rs]
 no-default-features = true
 features = ["backend-redis", "backend-mysql"]
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+strip = "symbols"
