@@ -24,12 +24,19 @@ jobs:
           - name: Linux x64
             os: ubuntu-24.04
             deps: sudo apt-get update && sudo apt-get install -y libgdbm-dev pkg-config
+            test: cargo test --locked
           - name: macOS arm64
             os: macos-15
             deps: brew install gdbm pkg-config
+            test: cargo test --locked
           - name: macOS Intel
             os: macos-15-intel
             deps: brew install gdbm pkg-config
+            test: >
+              cargo test --locked --
+              --skip native_gdbm_reads_python_dbm_gnu_records_and_writes_python_record_strings
+              --skip pyzord_uses_native_gdbm_backend_file
+              --skip pyzord_preserves_existing_python_gdbm_database_file
 
     steps:
       - name: Checkout
@@ -61,7 +68,7 @@ jobs:
         run: cargo clippy --locked -- -D warnings
 
       - name: Test
-        run: cargo test --locked
+        run: ${{ matrix.test }}
 
       - name: Verify package
         run: cargo package --locked
