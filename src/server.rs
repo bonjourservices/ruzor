@@ -482,6 +482,15 @@ struct RequestDebugContext<'a> {
     peer_ip: &'a str,
 }
 
+struct HandlerContext<'a, D: DigestDatabase + ?Sized> {
+    db: &'a Arc<Mutex<D>>,
+    accounts: &'a HashMap<String, String>,
+    acl: &'a HashMap<String, HashSet<String>>,
+    forwarder: Option<&'a Forwarder>,
+    proxy_sources: &'a [Address],
+    debug: Option<RequestDebugContext<'a>>,
+}
+
 fn handle_packet_with_forwarder<D: DigestDatabase + ?Sized>(
     packet: &[u8],
     db: &Arc<Mutex<D>>,
@@ -495,17 +504,17 @@ fn handle_packet_with_forwarder<D: DigestDatabase + ?Sized>(
     let request = Message::parse(&cleaned);
     let mut response = message::response(request.get("Thread"));
 
+    let context = HandlerContext {
+        db,
+        accounts,
+        acl,
+        forwarder,
+        proxy_sources,
+        debug,
+    };
+
     match panic::catch_unwind(AssertUnwindSafe(|| {
-        really_handle(
-            &request,
-            &mut response,
-            db,
-            accounts,
-            acl,
-            forwarder,
-            proxy_sources,
-            debug,
-        )
+        really_handle(&request, &mut response, &context)
     })) {
         Ok(Ok(())) => {}
         Ok(Err(error)) => apply_error(&mut response, error),
@@ -519,16 +528,12 @@ fn handle_packet_with_forwarder<D: DigestDatabase + ?Sized>(
 fn really_handle<D: DigestDatabase + ?Sized>(
     request: &Message,
     response: &mut Message,
-    db: &Arc<Mutex<D>>,
-    accounts: &HashMap<String, String>,
-    acl: &HashMap<String, HashSet<String>>,
-    forwarder: Option<&Forwarder>,
-    proxy_sources: &[Address],
-    debug: Option<RequestDebugContext<'_>>,
+    context: &HandlerContext<'_, D>,
 ) -> Result<()> {
     let user = request.get("User").unwrap_or(ANONYMOUS_USER);
     if user != ANONYMOUS_USER {
-        let key = accounts
+        let key = context
+            .accounts
             .get(user)
             .ok_or_else(|| PyzorError::Signature("Unknown user.".to_string()))?;
         account::verify_signature(request, key)?;
@@ -545,7 +550,8 @@ fn really_handle<D: DigestDatabase + ?Sized>(
     }
 
     let opcode = request.get("Op").unwrap_or("");
-    if !acl
+    if !context
+        .acl
         .get(user)
         .map(|ops| ops.contains(opcode))
         .unwrap_or(false)
@@ -554,7 +560,7 @@ fn really_handle<D: DigestDatabase + ?Sized>(
             "User is not authorized to request the operation.".to_string(),
         ));
     }
-    if let Some(debug) = debug {
+    if let Some(debug) = context.debug {
         debug
             .logger
             .debug(format!("Got a {opcode} command from {}", debug.peer_ip));
@@ -570,7 +576,7 @@ fn really_handle<D: DigestDatabase + ?Sized>(
         "ping" => {}
         "pong" => {
             if let Some(digest) = digests.first() {
-                if let Some(debug) = debug {
+                if let Some(debug) = context.debug {
                     debug.logger.debug(format!("Request pong for {digest}"));
                 }
                 response.add_header("Count", isize::MAX.to_string());
@@ -579,16 +585,19 @@ fn really_handle<D: DigestDatabase + ?Sized>(
         }
         "check" => {
             if let Some(digest) = digests.first() {
-                let mut record = with_database(db, |database| database.get(digest))?;
-                if let Some(debug) = debug {
+                let mut record = with_database(context.db, |database| database.get(digest))?;
+                if let Some(debug) = context.debug {
                     debug
                         .logger
                         .debug(format!("Request to check digest {digest}"));
                 }
                 if !record_has_match(&record)
-                    && let Some(proxy_record) = proxy_check_miss(digest, proxy_sources, debug)
+                    && let Some(proxy_record) =
+                        proxy_check_miss(digest, context.proxy_sources, context.debug)
                 {
-                    with_database(db, |database| database.set(digest, proxy_record.clone()))?;
+                    with_database(context.db, |database| {
+                        database.set(digest, proxy_record.clone())
+                    })?;
                     record = proxy_record;
                 }
                 response.add_header("Count", record.r_count.to_string());
@@ -597,8 +606,8 @@ fn really_handle<D: DigestDatabase + ?Sized>(
         }
         "info" => {
             if let Some(digest) = digests.first() {
-                let record = with_database(db, |database| database.get(digest))?;
-                if let Some(debug) = debug {
+                let record = with_database(context.db, |database| database.get(digest))?;
+                if let Some(debug) = context.debug {
                     debug
                         .logger
                         .debug(format!("Request for information about digest {digest}"));
@@ -613,15 +622,15 @@ fn really_handle<D: DigestDatabase + ?Sized>(
         }
         "report" => {
             if !digests.is_empty() {
-                if let Some(debug) = debug {
+                if let Some(debug) = context.debug {
                     let digest_refs = digests.iter().map(String::as_str).collect::<Vec<_>>();
                     debug.logger.debug(format!(
                         "Request to report digests {}",
                         format_digests_repr(&digest_refs)
                     ));
                 }
-                with_database(db, |database| database.report(&digests))?;
-                if let Some(forwarder) = forwarder {
+                with_database(context.db, |database| database.report(&digests))?;
+                if let Some(forwarder) = context.forwarder {
                     for digest in &digests {
                         forwarder.queue_forward_request(digest, false);
                     }
@@ -630,15 +639,15 @@ fn really_handle<D: DigestDatabase + ?Sized>(
         }
         "whitelist" => {
             if !digests.is_empty() {
-                if let Some(debug) = debug {
+                if let Some(debug) = context.debug {
                     let digest_refs = digests.iter().map(String::as_str).collect::<Vec<_>>();
                     debug.logger.debug(format!(
                         "Request to whitelist digests {}",
                         format_digests_repr(&digest_refs)
                     ));
                 }
-                with_database(db, |database| database.whitelist(&digests))?;
-                if let Some(forwarder) = forwarder {
+                with_database(context.db, |database| database.whitelist(&digests))?;
+                if let Some(forwarder) = context.forwarder {
                     for digest in &digests {
                         forwarder.queue_forward_request(digest, true);
                     }

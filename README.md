@@ -7,7 +7,13 @@
 
 Ruzor is the Rust port of the Pyzor 1.1.2 UDP client and server.
 
-Full static documentation is available at <https://docs.ruzor.org> and in [documentation/index.html](documentation/index.html).
+## Project Links
+
+- Website: <https://ruzor.org>
+- Documentation: <https://docs.ruzor.org> and [documentation/index.html](documentation/index.html)
+- Public Ruzor service: `public.ruzor.org:24441`
+- GitHub: <https://github.com/bonjourservices/ruzor>
+- crates.io: <https://crates.io/crates/ruzor>
 
 Pyzor is a collaborative, networked spam detection system that identifies messages by digest and lets clients check, report, or whitelist those digests against a Pyzor server. This crate provides the `ruzor` client and `ruzord` daemon as a Rust package with command-line behavior and storage formats compatible with the upstream Pyzor 1.1 documentation.
 
@@ -137,7 +143,13 @@ Useful options:
 -n, --nice NICE
 ```
 
-If no server file is configured, Pyzor clients default to the public Pyzor server `public.pyzor.org:24441`, matching upstream Pyzor. Use a local `servers` file for private testing so `report` and `whitelist` do not affect a public server.
+If no server file is configured, Pyzor-compatible clients default to the upstream public Pyzor server `public.pyzor.org:24441`, matching upstream Pyzor. To use the public Ruzor endpoint instead, write `public.ruzor.org:24441` to your `servers` file:
+
+```sh
+printf '%s\n' public.ruzor.org:24441 > ~/.ruzor/servers
+```
+
+Use a local `servers` file for private testing so `report` and `whitelist` do not affect a public server.
 
 ## Server Usage
 
@@ -310,8 +322,9 @@ Pyzor's installed package alone was 283.3 KiB in this run, but its `pyzor` and `
 GitHub releases are tag-driven. To cut a release:
 
 ```sh
-git tag -a v0.1.0 -m 'ruzor v0.1.0'
-git push origin v0.1.0
+VERSION=0.1.1
+git tag -a "v${VERSION}" -m "ruzor v${VERSION}"
+git push origin "v${VERSION}"
 ```
 
 The release workflow builds with stable Rust, verifies the crate package, and uploads native binary archives for Linux x64, macOS arm64, and macOS Intel. CI runs on pushes and pull requests with `fmt`, `clippy`, `cargo test`, and `cargo package`.
