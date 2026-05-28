@@ -174,6 +174,8 @@ ruzord -e redis_v0 --dsn 127.0.0.1,6379,,0 -a 127.0.0.1 -p 24441
 ruzord -e mysql --dsn 127.0.0.1,ruzor,secret,ruzord,digests -a 127.0.0.1 -p 24441
 ```
 
+Redis DSNs also accept an optional fifth username field (`host,port,password,db,username`) for managed Redis ACL users.
+
 `--proxy-source` accepts a comma-separated list of `host[:port]` Pyzor-compatible servers. On a local `check` miss, `ruzord` checks those sources in order and stores positive upstream `Count` or `WL-Count` responses in the configured backend before replying.
 
 The MySQL table must use the upstream Pyzor schema:

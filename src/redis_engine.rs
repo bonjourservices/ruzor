@@ -19,6 +19,7 @@ pub struct RedisDsn {
     pub port: u16,
     pub password: Option<String>,
     pub db: i64,
+    pub username: Option<String>,
 }
 
 impl RedisDsn {
@@ -28,6 +29,12 @@ impl RedisDsn {
         let port = fields.next().unwrap_or("");
         let password = fields.next().unwrap_or("");
         let db = fields.next().unwrap_or("");
+        let username = fields.next().unwrap_or("");
+        if !username.is_empty() && password.is_empty() {
+            return Err(PyzorError::Comm(
+                "Redis DSN username requires a password.".to_string(),
+            ));
+        }
 
         Ok(Self {
             host: if host.is_empty() {
@@ -51,6 +58,11 @@ impl RedisDsn {
             } else {
                 db.parse()
                     .map_err(|_| PyzorError::Comm("Invalid Redis DSN database.".to_string()))?
+            },
+            username: if username.is_empty() {
+                None
+            } else {
+                Some(username.to_string())
             },
         })
     }
@@ -77,7 +89,11 @@ impl RedisDsn {
             reader: BufReader::new(stream),
         };
         if let Some(password) = self.password.as_deref() {
-            connection.command(&["AUTH", password])?;
+            if let Some(username) = self.username.as_deref() {
+                connection.command(&["AUTH", username, password])?;
+            } else {
+                connection.command(&["AUTH", password])?;
+            }
         }
         let db = self.db.to_string();
         connection.command(&["SELECT", db.as_str()])?;
@@ -432,6 +448,7 @@ mod tests {
                 port: 6379,
                 password: None,
                 db: 0,
+                username: None,
             }
         );
         assert_eq!(
@@ -441,6 +458,17 @@ mod tests {
                 port: 6380,
                 password: Some("secret".to_string()),
                 db: 2,
+                username: None,
+            }
+        );
+        assert_eq!(
+            RedisDsn::parse("redis.example,6379,secret,0,ruzor").unwrap(),
+            RedisDsn {
+                host: "redis.example".to_string(),
+                port: 6379,
+                password: Some("secret".to_string()),
+                db: 0,
+                username: Some("ruzor".to_string()),
             }
         );
     }

@@ -99,7 +99,7 @@
       <div class="hero-grid">
         <p class="eyebrow">ruzord daemon reference</p>
         <h1>Server Usage</h1>
-        <p class="hero-copy">Rust-native Pyzor-compatible client and server documentation, built as static HTML and CSS for readable offline and hosted docs.</p>
+        <p class="hero-copy">Rust-native Pyzor-compatible client and server documentation.</p>
       </div>
     </section>
 
@@ -130,8 +130,8 @@
     <thead><tr><th>Engine</th><th>DSN</th><th>Notes</th></tr></thead>
     <tbody>
       <tr><td><code>gdbm</code></td><td>Path to database file</td><td>Default backend; compatible with Python GNU gdbm records.</td></tr>
-      <tr><td><code>redis</code></td><td><code>host,port,password,db</code></td><td>Redis v1 hash format.</td></tr>
-      <tr><td><code>redis_v0</code></td><td><code>host,port,password,db</code></td><td>Legacy Redis string format.</td></tr>
+      <tr><td><code>redis</code></td><td><code>host,port,password,db[,username]</code></td><td>Redis v1 hash format; optional username supports managed Redis ACL users.</td></tr>
+      <tr><td><code>redis_v0</code></td><td><code>host,port,password,db[,username]</code></td><td>Legacy Redis string format; optional username supports managed Redis ACL users.</td></tr>
       <tr><td><code>mysql</code></td><td><code>host,user,password,database,table</code></td><td>Uses the upstream Pyzor MySQL schema.</td></tr>
     </tbody>
   </table>
