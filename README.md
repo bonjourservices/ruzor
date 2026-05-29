@@ -322,7 +322,7 @@ These numbers are local-loopback measurements, so use the included benchmark har
 GitHub releases are tag-driven. To cut a release:
 
 ```sh
-VERSION=0.1.1
+VERSION=0.1.2
 git tag -a "v${VERSION}" -m "ruzor v${VERSION}"
 git push origin "v${VERSION}"
 ```

@@ -8,9 +8,10 @@ use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use ruzor::account::now_timestamp;
 use ruzor::client::Client;
 use ruzor::config::Address;
-use ruzor::engines::DigestDatabase;
+use ruzor::engines::{DigestDatabase, Record};
 use ruzor::gdbm_engine::GdbmDatabase;
 
 const DIGEST: &str = "7421216f915a87e02da034cc483f5c876e1a1338";
@@ -83,6 +84,41 @@ fn pyzord_preserves_existing_python_gdbm_database_file() {
         value.starts_with("1,8,"),
         "unexpected gdbm value after report: {value}"
     );
+    let _ = std::fs::remove_file(path);
+}
+
+#[test]
+fn native_gdbm_cleanup_age_removes_stale_records() {
+    let path = temp_database_path("cleanup-stale");
+    let now = now_timestamp();
+    let stale = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    let fresh = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+
+    {
+        let mut db = GdbmDatabase::open(&path).unwrap();
+        db.set(
+            stale,
+            Record {
+                r_count: 24,
+                r_updated: Some(now - 3 * 86_400),
+                ..Record::default()
+            },
+        )
+        .unwrap();
+        db.set(
+            fresh,
+            Record {
+                r_count: 42,
+                r_updated: Some(now),
+                ..Record::default()
+            },
+        )
+        .unwrap();
+    }
+
+    let mut db = GdbmDatabase::open_with_cleanup_age(&path, Some(86_400)).unwrap();
+    assert_eq!(db.get(stale).unwrap(), Record::default());
+    assert_eq!(db.get(fresh).unwrap().r_count, 42);
     let _ = std::fs::remove_file(path);
 }
 

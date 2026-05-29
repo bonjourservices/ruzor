@@ -2,6 +2,7 @@ use std::fmt;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::error::PyzorError;
+use crate::python_repr;
 use crate::{PROTO_VERSION, Result};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -142,7 +143,7 @@ impl Message {
     }
 
     pub fn is_ok(&self) -> bool {
-        self.code().map(|code| code == 200).unwrap_or(false)
+        self.code().is_ok_and(|code| code == 200)
     }
 
     pub fn thread(&self) -> Result<ThreadId> {
@@ -157,7 +158,7 @@ impl Message {
 
     pub fn head_tuple(&self) -> String {
         let code = self.code().unwrap_or(0);
-        format!("({}, '{}')", code, python_single_quoted(self.diag()))
+        format!("({}, '{}')", code, python_repr::single_quoted(self.diag()))
     }
 }
 
@@ -233,10 +234,6 @@ pub fn response(thread: Option<&str>) -> Message {
         msg.add_header("Thread", thread);
     }
     msg
-}
-
-fn python_single_quoted(value: &str) -> String {
-    value.replace('\\', "\\\\").replace('\'', "\\'")
 }
 
 #[cfg(test)]

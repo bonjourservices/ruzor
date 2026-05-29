@@ -107,14 +107,10 @@ impl RawGdbm {
     fn fetch(&self, key: &[u8]) -> Result<Option<Vec<u8>>> {
         let key = datum_from_bytes("key", key)?;
         let value = unsafe { gdbm_fetch(self.handle, key) };
-        if value.dptr.is_null() {
-            return if last_gdbm_errno() == GDBM_ITEM_NOT_FOUND as c_int {
-                Ok(None)
-            } else {
-                Err(last_gdbm_error("gdbm_fetch failed"))
-            };
-        }
-        datum_into_vec(value).map(Some)
+        let Some(value) = OwnedDatum::from_nullable(value, "gdbm_fetch failed")? else {
+            return Ok(None);
+        };
+        value.into_vec().map(Some)
     }
 
     fn store(&self, key: &[u8], value: &[u8]) -> Result<()> {
@@ -138,11 +134,10 @@ impl RawGdbm {
 
     fn keys(&self) -> Result<Vec<Vec<u8>>> {
         let mut out = Vec::new();
-        let mut key = unsafe { gdbm_firstkey(self.handle) };
-        while !key.dptr.is_null() {
-            let next = unsafe { gdbm_nextkey(self.handle, key) };
-            out.push(datum_into_vec(key)?);
-            key = next;
+        let mut key = OwnedDatum::first_key(self.handle)?;
+        while let Some(current) = key.take() {
+            key = OwnedDatum::next_key(self.handle, &current)?;
+            out.push(current.into_vec()?);
         }
         Ok(out)
     }
@@ -178,16 +173,52 @@ fn datum_from_bytes(what: &str, bytes: &[u8]) -> Result<datum> {
     })
 }
 
-fn datum_into_vec(value: datum) -> Result<Vec<u8>> {
-    if value.dsize < 0 {
-        unsafe { free(value.dptr as *mut c_void) };
-        return Err(PyzorError::Comm("gdbm returned negative datum size".into()));
+#[derive(Debug)]
+struct OwnedDatum {
+    raw: datum,
+}
+
+impl OwnedDatum {
+    fn first_key(handle: GDBM_FILE) -> Result<Option<Self>> {
+        Self::from_nullable(unsafe { gdbm_firstkey(handle) }, "gdbm_firstkey failed")
     }
-    let bytes =
-        unsafe { std::slice::from_raw_parts(value.dptr as *const u8, value.dsize as usize) }
-            .to_vec();
-    unsafe { free(value.dptr as *mut c_void) };
-    Ok(bytes)
+
+    fn next_key(handle: GDBM_FILE, previous: &Self) -> Result<Option<Self>> {
+        Self::from_nullable(
+            unsafe { gdbm_nextkey(handle, previous.raw) },
+            "gdbm_nextkey failed",
+        )
+    }
+
+    fn from_nullable(raw: datum, context: &str) -> Result<Option<Self>> {
+        if raw.dptr.is_null() {
+            return if last_gdbm_errno() == GDBM_ITEM_NOT_FOUND as c_int {
+                Ok(None)
+            } else {
+                Err(last_gdbm_error(context))
+            };
+        }
+        Ok(Some(Self { raw }))
+    }
+
+    fn into_vec(self) -> Result<Vec<u8>> {
+        if self.raw.dsize < 0 {
+            return Err(PyzorError::Comm("gdbm returned negative datum size".into()));
+        }
+        let bytes = unsafe {
+            std::slice::from_raw_parts(self.raw.dptr as *const u8, self.raw.dsize as usize)
+        }
+        .to_vec();
+        Ok(bytes)
+    }
+}
+
+impl Drop for OwnedDatum {
+    fn drop(&mut self) {
+        if !self.raw.dptr.is_null() {
+            unsafe { free(self.raw.dptr as *mut c_void) };
+        }
+    }
 }
 
 fn last_gdbm_errno() -> c_int {

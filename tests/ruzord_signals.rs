@@ -134,10 +134,10 @@ fn wait_for_server_detached(address: &Address) {
 
 fn wait_for_pidfile(pidfile: &Path) -> u32 {
     for _ in 0..50 {
-        if let Ok(text) = std::fs::read_to_string(pidfile) {
-            if let Ok(pid) = text.trim().parse::<u32>() {
-                return pid;
-            }
+        if let Ok(text) = std::fs::read_to_string(pidfile)
+            && let Ok(pid) = text.trim().parse::<u32>()
+        {
+            return pid;
         }
         thread::sleep(Duration::from_millis(50));
     }

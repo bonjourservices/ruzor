@@ -67,10 +67,10 @@ fn normalize_message_newlines(bytes: &[u8]) -> Vec<u8> {
     let mut index = 0;
     while index < bytes.len() {
         match bytes[index] {
-            13 => {
-                normalized.push(10);
+            b'\r' => {
+                normalized.push(b'\n');
                 index += 1;
-                if index < bytes.len() && bytes[index] == 10 {
+                if index < bytes.len() && bytes[index] == b'\n' {
                     index += 1;
                 }
             }

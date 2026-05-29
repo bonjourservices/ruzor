@@ -21,6 +21,7 @@ pub mod redis_engine;
 pub mod server;
 pub use server::{serve_socket_until_shutdown, serve_with_shutdown};
 
+pub(crate) mod python_repr;
 pub mod sha1;
 
 pub const VERSION: &str = "1.1.2";

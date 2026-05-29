@@ -7,6 +7,7 @@ use crate::config::Address;
 use crate::error::PyzorError;
 use crate::logging::Logger;
 use crate::message::{self, Message, ThreadId};
+use crate::python_repr;
 use crate::{MAX_PACKET_SIZE, Result};
 
 #[derive(Clone, Debug)]
@@ -75,7 +76,7 @@ impl Client {
     pub fn send_only(&self, mut msg: Message, address: &Address) -> Result<()> {
         self.sign(&mut msg, address);
         let packet = msg.as_string();
-        self.debug(format!("sending: {}", python_repr_str(&packet)));
+        self.debug(format!("sending: {}", python_repr::string(&packet)));
         let socket = bind_for(address)?;
         let target = resolve(address)?;
         socket
@@ -88,7 +89,7 @@ impl Client {
         self.sign(&mut msg, address);
         let expected_id = msg.thread()?;
         let packet = msg.as_string();
-        self.debug(format!("sending: {}", python_repr_str(&packet)));
+        self.debug(format!("sending: {}", python_repr::string(&packet)));
         let socket = bind_for(address)?;
         socket.set_read_timeout(Some(self.timeout))?;
         let target = resolve(address)?;
@@ -114,7 +115,7 @@ impl Client {
         })?;
         self.debug(format!(
             "received: {}/{}",
-            python_repr_bytes(&buf[..len]),
+            python_repr::bytes(&buf[..len]),
             python_socket_addr_repr(peer)
         ));
         let response = Message::parse(&buf[..len]);
@@ -273,35 +274,5 @@ fn python_socket_addr_repr(address: SocketAddr) -> String {
             address.flowinfo(),
             address.scope_id()
         ),
-    }
-}
-
-fn python_repr_str(value: &str) -> String {
-    let mut output = String::from("'");
-    for &byte in value.as_bytes() {
-        push_python_byte_repr(&mut output, byte);
-    }
-    output.push(char::from(39));
-    output
-}
-
-fn python_repr_bytes(bytes: &[u8]) -> String {
-    let mut output = String::from("b'");
-    for &byte in bytes {
-        push_python_byte_repr(&mut output, byte);
-    }
-    output.push(char::from(39));
-    output
-}
-
-fn push_python_byte_repr(output: &mut String, byte: u8) {
-    match byte {
-        92 => output.push_str("\\\\"),
-        39 => output.push_str("\\'"),
-        10 => output.push_str("\\n"),
-        13 => output.push_str("\\r"),
-        9 => output.push_str("\\t"),
-        32..=126 => output.push(byte as char),
-        _ => output.push_str(&format!("\\x{byte:02x}")),
     }
 }

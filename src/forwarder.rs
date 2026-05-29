@@ -1,7 +1,7 @@
 use std::fmt;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::{Receiver, RecvTimeoutError, SyncSender, TrySendError, sync_channel};
+use std::sync::mpsc::{Receiver, RecvTimeoutError, SyncSender, sync_channel};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
@@ -27,9 +27,7 @@ impl Forwarder {
             digest: digest.to_string(),
             whitelist,
         };
-        match self.sender.try_send(request) {
-            Ok(()) | Err(TrySendError::Full(_)) | Err(TrySendError::Disconnected(_)) => {}
-        }
+        let _ = self.sender.try_send(request);
     }
 }
 

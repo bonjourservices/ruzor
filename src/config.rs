@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use crate::ANONYMOUS_USER;
 use crate::account::{Account, key_from_hexstr};
 use crate::logging::Logger;
+use crate::python_repr;
 
 pub type Address = (String, u16);
 
@@ -38,7 +39,7 @@ pub fn load_passwd_file_with_logger(
             if let Some(logger) = logger {
                 logger.warning(format!(
                     "Invalid accounts line: {}",
-                    python_string_repr(line)
+                    python_repr::text(line)
                 ));
             }
             continue;
@@ -100,7 +101,7 @@ pub fn load_access_file_with_logger(
             .collect();
         if parts.len() != 3 {
             if let Some(logger) = logger {
-                logger.warning(format!("Invalid ACL line: {}", python_string_repr(line)));
+                logger.warning(format!("Invalid ACL line: {}", python_repr::text(line)));
             }
             continue;
         }
@@ -109,7 +110,7 @@ pub fn load_access_file_with_logger(
             "deny" => false,
             _ => {
                 if let Some(logger) = logger {
-                    logger.warning(format!("Invalid ACL line: {}", python_string_repr(line)));
+                    logger.warning(format!("Invalid ACL line: {}", python_repr::text(line)));
                 }
                 continue;
             }
@@ -324,22 +325,6 @@ fn account_names(accounts: &HashMap<String, String>) -> Vec<String> {
     names
 }
 
-fn python_string_repr(value: &str) -> String {
-    let mut out = String::from("'");
-    for ch in value.chars() {
-        match ch {
-            '\\' => out.push_str("\\\\"),
-            '\'' => out.push_str("\\'"),
-            '\n' => out.push_str("\\n"),
-            '\r' => out.push_str("\\r"),
-            '\t' => out.push_str("\\t"),
-            ch => out.push(ch),
-        }
-    }
-    out.push('\'');
-    out
-}
-
 fn python_acl_repr(acl: &HashMap<String, HashSet<String>>) -> String {
     let mut users: Vec<_> = acl.keys().collect();
     users.sort();
@@ -350,10 +335,10 @@ fn python_acl_repr(acl: &HashMap<String, HashSet<String>>) -> String {
             ops.sort();
             let ops = ops
                 .into_iter()
-                .map(|op| format!("'{}'", op))
+                .map(|op| format!("'{}'", python_repr::single_quoted(op)))
                 .collect::<Vec<_>>()
                 .join(", ");
-            format!("'{}': {{{}}}", user, ops)
+            format!("'{}': {{{}}}", python_repr::single_quoted(user), ops)
         })
         .collect::<Vec<_>>()
         .join(", ");
@@ -362,7 +347,7 @@ fn python_acl_repr(acl: &HashMap<String, HashSet<String>>) -> String {
 
 fn strip_comment(line: &str) -> &str {
     for (index, ch) in line.char_indices() {
-        if ch == '#' && index > 0 && !line[..index].ends_with(char::from(92)) {
+        if ch == '#' && index > 0 && !line[..index].ends_with('\\') {
             return &line[..index];
         }
     }

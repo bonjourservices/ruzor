@@ -22,6 +22,7 @@ use crate::mysql_cli::MySqlCommandExecutor;
 use crate::mysql_engine::MySqlDatabase;
 #[cfg(feature = "backend-mysql")]
 use crate::mysql_native::MySqlNativeExecutor;
+use crate::python_repr;
 use crate::redis_engine::{RedisV0Database, RedisV1Database};
 use crate::{ANONYMOUS_USER, MAX_PACKET_SIZE, PROTO_MAJOR, PROTO_VERSION, Result};
 
@@ -281,7 +282,7 @@ fn serve_socket_with_control(
     if let Some(logger) = &options.logger {
         logger.debug(format!(
             "Listening on ({}, {})",
-            python_repr_str(&options.address.0),
+            python_repr::string(&options.address.0),
             options.address.1
         ));
     }
@@ -328,7 +329,7 @@ fn serve_socket_with_control(
                 let _permit = permit;
                 let peer_ip = peer.ip().to_string();
                 if let Some(logger) = &logger {
-                    logger.debug(format!("Received: {}", python_repr_bytes(&packet)));
+                    logger.debug(format!("Received: {}", python_repr::bytes(&packet)));
                 }
                 let auth = auth.read().expect("auth state poisoned");
                 let debug = logger.as_ref().map(|logger| RequestDebugContext {
@@ -347,14 +348,17 @@ fn serve_socket_with_control(
                 log_usage_for_response(&packet, &peer_ip, &response, usage_logger.as_ref());
                 let response_packet = response.as_string();
                 if let Some(logger) = &logger {
-                    logger.debug(format!("Sending: {}", python_repr_str(&response_packet)));
+                    logger.debug(format!(
+                        "Sending: {}",
+                        python_repr::string(&response_packet)
+                    ));
                 }
                 let _ = socket.send_to(response_packet.as_bytes(), peer);
             });
         } else {
             let peer_ip = peer.ip().to_string();
             if let Some(logger) = &logger {
-                logger.debug(format!("Received: {}", python_repr_bytes(&packet)));
+                logger.debug(format!("Received: {}", python_repr::bytes(&packet)));
             }
             let auth = auth.read().expect("auth state poisoned");
             let debug = logger.as_ref().map(|logger| RequestDebugContext {
@@ -373,7 +377,10 @@ fn serve_socket_with_control(
             log_usage_for_response(&packet, &peer_ip, &response, usage_logger.as_ref());
             let response_packet = response.as_string();
             if let Some(logger) = &logger {
-                logger.debug(format!("Sending: {}", python_repr_str(&response_packet)));
+                logger.debug(format!(
+                    "Sending: {}",
+                    python_repr::string(&response_packet)
+                ));
             }
             socket.send_to(response_packet.as_bytes(), peer)?;
         }
@@ -417,44 +424,10 @@ fn format_digests_repr(digests: &[&str]) -> String {
     }
     let values = digests
         .iter()
-        .map(|digest| format!("'{}'", python_single_quote(digest)))
+        .map(|digest| format!("'{}'", python_repr::single_quoted(digest)))
         .collect::<Vec<_>>()
         .join(", ");
     format!("[{values}]")
-}
-
-fn python_single_quote(value: &str) -> String {
-    value.replace('\\', "\\\\").replace('\'', "\\'")
-}
-
-fn python_repr_str(value: &str) -> String {
-    let mut output = String::from("'");
-    for &byte in value.as_bytes() {
-        push_python_byte_repr(&mut output, byte);
-    }
-    output.push(char::from(39));
-    output
-}
-
-fn python_repr_bytes(bytes: &[u8]) -> String {
-    let mut output = String::from("b'");
-    for &byte in bytes {
-        push_python_byte_repr(&mut output, byte);
-    }
-    output.push(char::from(39));
-    output
-}
-
-fn push_python_byte_repr(output: &mut String, byte: u8) {
-    match byte {
-        92 => output.push_str("\\\\"),
-        39 => output.push_str("\\'"),
-        10 => output.push_str("\\n"),
-        13 => output.push_str("\\r"),
-        9 => output.push_str("\\t"),
-        32..=126 => output.push(byte as char),
-        _ => output.push_str(&format!("\\x{byte:02x}")),
-    }
 }
 
 pub fn handle_packet<D: DigestDatabase + ?Sized>(
