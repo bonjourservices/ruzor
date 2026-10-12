@@ -334,7 +334,7 @@ Before comparing on another machine, run the included harness there.
 GitHub releases are tag-driven. To cut a release:
 
 ```sh
-VERSION=0.1.2
+VERSION=0.1.3
 git tag -a "v${VERSION}" -m "ruzor v${VERSION}"
 git push origin "v${VERSION}"
 ```
