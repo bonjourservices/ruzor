@@ -35,15 +35,6 @@ jobs:
               --skip native_gdbm_reads_python_dbm_gnu_records_and_writes_python_record_strings
               --skip pyzord_uses_native_gdbm_backend_file
               --skip pyzord_preserves_existing_python_gdbm_database_file
-          - name: macOS Intel
-            os: macos-15-intel
-            deps: brew install gdbm pkg-config
-            test: >
-              cargo test --locked --
-              --skip native_gdbm_reads_python_dbm_gnu_records_and_writes_python_record_strings
-              --skip pyzord_uses_native_gdbm_backend_file
-              --skip pyzord_preserves_existing_python_gdbm_database_file
-
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

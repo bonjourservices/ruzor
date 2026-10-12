@@ -74,6 +74,21 @@ fn predigest_removes_reference_email_url_and_long_tokens() {
 }
 
 #[test]
+fn normalization_preserves_unicode_and_null_token_boundaries() {
+    for (input, expected) in [
+        ("", ""),
+        (" \t\0\u{2003}", ""),
+        ("Café\u{a0}中\0文\u{2003}test", "Café中文test"),
+        ("ééééééééé", "ééééééééé"),
+        ("éééééééééé", ""),
+        ("12345\067890 keep", "keep"),
+        ("a\0@b http\0:x keep", "keep"),
+    ] {
+        assert_eq!(normalize(input), expected, "input: {input:?}");
+    }
+}
+
+#[test]
 fn predigest_line_selection_matches_reference_cases() {
     assert_eq!(
         predigest_message(b"This line is included\nnot this\nThis also"),

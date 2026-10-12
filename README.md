@@ -289,24 +289,36 @@ python3 benchmarks/run_benchmarks.py --repo-root .
 
 Use a Python interpreter with `dbm.gnu` support for the Python `pyzord` comparison. On Homebrew macOS, pass `--python-bin /opt/homebrew/bin/python3` if needed.
 
-Benchmark snapshot from May 28, 2026 on Apple M3 Pro, macOS 26.5 arm64, Python 3.14.5, hyperfine 1.20.0, and release-mode Ruzor binaries:
+Snapshot from October 12, 2026, for Ruzor commit `ed2b8a4` and Pyzor 1.1.2.
+The host uses an AMD EPYC 4345P, Linux 7.1.8 x86_64, Rust 1.95.0, and Python 3.14.7.
+The measurements use hyperfine 1.20.0, release binaries with default features, and CPU cores 2 and 4.
+
+CLI times show the mean and standard deviation (variation between runs).
+Each CLI test uses 80 runs, except the mbox test with 40 runs.
+Each UDP operation uses 10,000 requests over the local network interface.
+p50 is the median response time.
+RSS is the memory that a process occupies in RAM.
 
 | What | Python (Pyzor) | Rust (Ruzor) | Difference |
 | --- | ---: | ---: | ---: |
-| Client program footprint | 96.4 MiB Python runtime + 14.7 KiB script | 710.4 KiB native binary | -99.3% |
-| Server program footprint | 96.4 MiB Python runtime + 16.4 KiB script | 2.36 MiB native binary | -97.5% |
-| Release package footprint | 96.6 MiB Pyzor install + runtime | 1.43 MiB release archive | -98.5% |
-| Client startup latency | 65.23 ms | 4.44 ms | -93.2% |
-| Small message digest latency | 59.34 ms | 3.40 ms | -94.3% |
-| 46 KiB message digest latency | 65.61 ms | 2.88 ms | -95.6% |
-| 100-message mbox digest latency | 62.31 ms | 5.40 ms | -91.3% |
-| Idle server RSS | 26.61 MiB | 1.77 MiB | -93.3% |
-| UDP `ping` p50 latency | 99.1 us | 26.9 us | -72.9% |
-| UDP `ping` throughput | 9,698 req/s | 30,571 req/s | +215% |
-| UDP `check` p50 latency | 133.8 us | 35.4 us | -73.5% |
-| UDP `check` throughput | 7,131 req/s | 26,508 req/s | +272% |
+| Client program footprint | 35.99 MiB Python runtime + 14.7 KiB script | 746.5 KiB native binary | -98.0% |
+| Server program footprint | 35.99 MiB Python runtime + 16.3 KiB script | 2.79 MiB native binary | -92.2% |
+| Client startup latency | 36.984 ± 2.280 ms | 0.261 ± 0.223 ms | -99.3% |
+| Small message digest latency | 38.115 ± 1.765 ms | 0.388 ± 0.086 ms | -99.0% |
+| 46 KiB message digest latency | 41.976 ± 2.156 ms | 0.550 ± 0.022 ms | -98.7% |
+| 100-message mbox digest latency | 39.828 ± 1.434 ms | 0.477 ± 0.024 ms | -98.8% |
+| Idle server RSS | 24.23 MiB | 4.07 MiB | -83.2% |
+| UDP `ping` p50 latency | 74.07 us | 7.17 us | -90.3% |
+| UDP `ping` throughput | 12,990 req/s | 130,392 req/s | +903.8% |
+| UDP `check` p50 latency | 109.93 us | 9.03 us | -91.8% |
+| UDP `check` throughput | 8,881 req/s | 103,726 req/s | +1067.9% |
 
-These numbers are local-loopback measurements, so use the included benchmark harness when comparing on another machine or before publishing updated claims.
+Python program footprints include the interpreter, shared libpython, standard library, and entry script.
+Both language totals exclude operating system shared libraries and cached Python bytecode.
+The compressed Rust release archive is 1.56 MiB.
+
+Hyperfine uses a shell for CLI commands, so submillisecond results include calibration noise.
+Before comparing on another machine, run the included harness there.
 
 ## Feature Flags
 

@@ -43,7 +43,7 @@ pub fn digest(bytes: &[u8]) -> [u8; 20] {
     }
     msg.extend_from_slice(&bit_len.to_be_bytes());
 
-    for chunk in msg.chunks_exact(64) {
+    for chunk in msg.as_chunks::<64>().0 {
         let mut w = [0u32; 80];
         for (i, word) in w.iter_mut().take(16).enumerate() {
             let j = i * 4;
@@ -119,6 +119,10 @@ mod tests {
         assert_eq!(
             hexdigest(b"abc"),
             "a9993e364706816aba3e25717850c26c9cd0d89d"
+        );
+        assert_eq!(
+            hexdigest(b"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"),
+            "84983e441c3bd26ebaae4aa1f95129e5e54670f1"
         );
     }
 }
