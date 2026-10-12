@@ -1,5 +1,6 @@
 use crate::sha1::Sha1;
 use encoding_rs::Encoding;
+use std::borrow::Cow;
 
 pub const DIGEST_SPEC: &[(usize, usize)] = &[(20, 3), (60, 3)];
 pub const HASH_SIZE: usize = 40;
@@ -283,19 +284,17 @@ fn split_multipart(bytes: &[u8], boundary: &str) -> Vec<Vec<u8>> {
 }
 
 pub fn normalize(input: &str) -> String {
-    let without_nuls = input.replace('\0', "");
+    let without_nuls = if input.contains('\0') {
+        Cow::Owned(input.replace('\0', ""))
+    } else {
+        Cow::Borrowed(input)
+    };
     let mut out = String::new();
-    let mut token = String::new();
-    for ch in without_nuls.chars() {
-        if ch.is_whitespace() {
-            push_normalized_token(&mut out, &token);
-            token.clear();
-        } else {
-            token.push(ch);
-        }
+    for token in without_nuls.split_whitespace() {
+        push_normalized_token(&mut out, token);
     }
-    push_normalized_token(&mut out, &token);
-    out.trim().to_string()
+    // Avoid retaining spare capacity for every collected digest line.
+    out.into_boxed_str().into_string()
 }
 
 fn push_normalized_token(out: &mut String, token: &str) {

@@ -62,6 +62,9 @@ impl Logger {
     }
 
     pub fn log(&self, level: Level, message: impl AsRef<str>) {
+        if level < self.stream_level() && (self.file_path.is_none() || level < self.file_level()) {
+            return;
+        }
         let line = format!(
             "{} ({}) {} {}\n",
             timestamp(),
@@ -131,5 +134,42 @@ mod tests {
         };
         assert_eq!(logger.stream_level(), Level::Debug);
         assert_eq!(logger.file_level(), Level::Debug);
+    }
+
+    #[test]
+    fn suppressed_messages_do_not_render() {
+        struct Suppressed;
+        impl AsRef<str> for Suppressed {
+            fn as_ref(&self) -> &str {
+                panic!("suppressed message was rendered");
+            }
+        }
+
+        let logger = Logger::new("test", None, false).unwrap();
+        for level in [Level::Debug, Level::Info, Level::Warning, Level::Error] {
+            logger.log(level, Suppressed);
+        }
+        let logger = Logger {
+            file_path: Some(PathBuf::from("unused.log")),
+            debug: false,
+        };
+        logger.debug(Suppressed);
+    }
+
+    #[test]
+    fn info_messages_still_reach_a_file_without_debug() {
+        let path = std::env::temp_dir().join(format!(
+            "ruzor-logger-{}-{}.log",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let logger = Logger::new("test", Some(path.to_str().unwrap().to_string()), false).unwrap();
+        logger.info("visible message");
+        let line = std::fs::read_to_string(&path).unwrap();
+        std::fs::remove_file(&path).unwrap();
+        assert!(line.ends_with(" INFO visible message\n"));
     }
 }
